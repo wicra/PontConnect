@@ -55,9 +55,9 @@ class _LoginPageState extends State<LoginPage> {
         // CONNEXION REUSSI & REDIRECTION
         if (mounted) {
           if (data['user']['type_user_id'] == 1) {
-            Navigator.pushReplacementNamed(context, '/admin');
+            Navigator.pushReplacementNamed(context, '/admin_page');
           } else {
-            Navigator.pushReplacementNamed(context, '/user');
+            Navigator.pushReplacementNamed(context, '/user_page');
           }
         }
       } else {
