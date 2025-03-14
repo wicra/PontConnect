@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       ),
 
       // ROUTES
-      initialRoute: '/SplashScreen',
+      initialRoute: '/startup_animation',
       routes: {
         '/login_screen': (context) => LoginPage(),
         '/register_screen': (context) => RegisterPage(),
