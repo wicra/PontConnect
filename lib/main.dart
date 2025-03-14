@@ -7,6 +7,8 @@ import 'package:pontconnect/startup_animation.dart';
 // CENTRALISATION COULEURS & API
 import 'package:pontconnect/constants.dart';
 
+import 'admin/admin_main_view.dart';
+
 // POINT D'ENTREE
 void main() {
   // LANCEMENT DE L'APPLICATION
@@ -41,6 +43,7 @@ class MyApp extends StatelessWidget {
         '/register_screen': (context) => RegisterPage(),
         '/startup_animation': (context) => StartupAnimation(),
         '/user_page': (context) => UserPage(),
+        '/admin_page': (context) => AdminPage(),
 
       },
     );
