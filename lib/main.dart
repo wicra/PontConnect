@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pontconnect/auth/login.dart';
 import 'package:pontconnect/auth/register.dart';
+import 'package:pontconnect/public/user_main_view.dart';
 import 'package:pontconnect/startup_animation.dart';
 
 // CENTRALISATION COULEURS & API
@@ -39,6 +40,8 @@ class MyApp extends StatelessWidget {
         '/login_screen': (context) => LoginPage(),
         '/register_screen': (context) => RegisterPage(),
         '/startup_animation': (context) => StartupAnimation(),
+        '/user_page': (context) => UserPage(),
+
       },
     );
   }
