@@ -37,7 +37,8 @@ flutter:
 
   # IMAGES
   assets:
-    - assets/images/
+    - assets/images/direction_entre.webp
+    - assets/images/direction_sortie.webp
 
   # FONTS
   fonts:
