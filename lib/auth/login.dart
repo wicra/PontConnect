@@ -249,7 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, '/register');
+                            Navigator.pushReplacementNamed(context, '/register_screen');
                           },
                           child: const Text(
                             "Pas de compte ? S'inscrire",
