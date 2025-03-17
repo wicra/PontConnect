@@ -37,9 +37,7 @@ flutter:
 
   # IMAGES
   assets:
-    - assets/images/direction_entre.webp
-    - assets/images/direction_sortie.webp
-
+    - assets/images/
   # FONTS
   fonts:
     #- family: SmoochSans
