@@ -36,7 +36,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     setState(() {
       _isLoading = true;
     });
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux.php?user_id=$userId");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
@@ -64,7 +64,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     final int? userId = UserSession.userId;
     if (userId == null) return;
     final url = Uri.parse(
-        "${ApiConstants.baseUrl}user/deleteBateau.php?bateau_id=$bateauId&user_id=$userId");
+        "${ApiConstants.baseUrl}user/deleteBoat?bateau_id=$bateauId&user_id=$userId");
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
@@ -266,29 +266,27 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
   // FONCTION POUR AJOUTER UN BATEAU VIA L'API
   Future<void> _addBateau(String nom, String immatriculation, String hauteur) async {
     final int? userId = UserSession.userId;
-    if (userId == null) return;
-    final url = Uri.parse("${ApiConstants.baseUrl}user/addBateau.php");
-    final body = json.encode({
-      "user_id": userId,
+    if (userId == null) {
+      return;
+    }
+    final url = Uri.parse("${ApiConstants.baseUrl}user/addBoat");
+    final body = {
+      "user_id": userId.toString(),
       "nom": nom,
       "immatriculation": immatriculation,
-      "hauteur_mat": double.tryParse(hauteur) ?? 0.0,
-    });
+      "hauteur_max": hauteur
+    };
     try {
-      final response = await http.post(url,
-          headers: {"Content-Type": "application/json"}, body: body);
-      final data = json.decode(response.body);
-      if (data["success"] == true) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("BATEAU AJOUTÉ")));
-        _fetchBateaux();
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("ERREUR : ${data["message"]}")));
-      }
+      final response = await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: json.encode(body)
+      );
+
+      // Le reste de votre code
     } catch (e) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR : ${e.toString()}")));
+          .showSnackBar(SnackBar(content: Text("ERREUR: ${e.toString()}")));
     }
   }
 

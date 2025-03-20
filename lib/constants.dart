@@ -15,5 +15,5 @@ const Color backgroundCard  = Color(0xFFedf2fb);
 
 // API REST URL CENTRALISATION
 class ApiConstants {
-  static const String baseUrl = 'http://ip:8888/Api/';
+  static const String baseUrl = 'http://10.192.23.8:3000/';
 }

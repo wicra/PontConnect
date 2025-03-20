@@ -35,7 +35,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     setState(() {
       _isLoading = true;
     });
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserReservations.php?user_id=$userId");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserReservations?user_id=$userId");
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
@@ -73,12 +73,22 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
   }
 
   // FONCTION POUR METTRE À JOUR LE STATUT D'UNE RÉSERVATION VIA L'API
-  Future<void> _updateStatus(String reservationId, String newStatus) async {
-    final url = Uri.parse("${ApiConstants.baseUrl}user/updateReservationStatus.php");
+  // FONCTION POUR METTRE À JOUR LE STATUT D'UNE RÉSERVATION VIA L'API
+  Future<void> _updateStatus(String reservationId, String newStatus, dynamic reservation) async {
+    final url = Uri.parse("${ApiConstants.baseUrl}user/updateReservationStatus");
+
+    // Construire un body plus complet avec les informations de la réservation
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus.toLowerCase(),
+      "actual_id": reservation['actual_id'], // Utiliser l'ID réel si disponible
+      "date_reservation": reservation['reservation_date'],
+      "horaires_id": reservation['horaires_id'],
+      "user_id": reservation['user_id'],
+      "pont_id": reservation['pont_id'],
+      "bateau_id": reservation['bateau_id']
     });
+
     try {
       final response = await http.post(url,
           headers: {"Content-Type": "application/json"}, body: body);
@@ -270,7 +280,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                                 TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _updateStatus(reservationId, newStatus);
+                                    _updateStatus(reservationId, newStatus, reservation);
                                   },
                                   child: Text("CONFIRMER", style: TextStyle(fontFamily: 'DarumadropOne')),
                                 ),

@@ -32,7 +32,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   // RÉCUPÉRATION DES DONNÉES CAPTEURS
   Future<void> _fetchCapteurs({bool silent = false}) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}user/getValuesCapteurs.php');
+      final url = Uri.parse('${ApiConstants.baseUrl}user/GetSensorValues');
       final response = await http.get(url).timeout(const Duration(seconds: 20));
       final data = json.decode(response.body);
 

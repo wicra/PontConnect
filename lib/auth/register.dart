@@ -32,7 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final response = await http.post(
         // API REST URL
-        Uri.parse('${ApiConstants.baseUrl}auth/register.php'),
+        Uri.parse('${ApiConstants.baseUrl}auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': _nameController.text.trim(),

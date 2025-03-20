@@ -36,7 +36,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
     });
 
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getCreneaux.php?date=$dateStr");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/getCreneaux?date=$dateStr");
     try {
       final response = await http.get(url);
 
@@ -83,7 +83,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
       return;
     }
 
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux.php?user_id=$userId");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -139,7 +139,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
       return;
     }
 
-    final url = Uri.parse("${ApiConstants.baseUrl}user/reserveCreneau.php");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reserveCreneau");
     final body = json.encode({
       "user_id": userId,
       "creneau_id": _selectedCreneauId,

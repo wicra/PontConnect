@@ -32,13 +32,15 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await http.post(
         // API REST URL
-        Uri.parse('${ApiConstants.baseUrl}auth/login.php'),
+        Uri.parse('${ApiConstants.baseUrl}auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
         }),
       );
+      print('Statut: ${response.statusCode}');
+      print('Corps: ${response.body}');
 
       final data = jsonDecode(response.body);
 

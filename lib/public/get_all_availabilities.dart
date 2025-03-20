@@ -28,7 +28,7 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       _creneaux = [];
     });
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getDisponibilites.php?date=$dateStr");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/GetAllAvailabilities?date=$dateStr");
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
