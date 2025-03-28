@@ -24,22 +24,28 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     _fetchBateaux();
   }
 
-  // FONCTION POUR RÉCUPÉRER LES BATEAUX DE L'UTILISATEUR VIA L'API
+  // RÉCUPÉRATION DES BATEAUX DE L'UTILISATEUR
   Future<void> _fetchBateaux() async {
     final int? userId = UserSession.userId;
+
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")),
       );
       return;
     }
+    
     setState(() {
       _isLoading = true;
     });
+
+    // APPEL API
     final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
+    
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
+      
       if (data["success"] == true && data["bateaux"] != null) {
         setState(() {
           _bateaux = data["bateaux"];
@@ -54,20 +60,24 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
         SnackBar(content: Text("ERREUR : ${e.toString()}")),
       );
     }
+    
     setState(() {
       _isLoading = false;
     });
   }
 
-  // FONCTION POUR SUPPRIMER UN BATEAU VIA L'API
+  // SUPPRESSION D'UN BATEAU
   Future<void> _deleteBateau(int bateauId) async {
     final int? userId = UserSession.userId;
     if (userId == null) return;
+    
     final url = Uri.parse(
         "${ApiConstants.baseUrl}user/deleteBoat?bateau_id=$bateauId&user_id=$userId");
+    
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
+      
       if (data["success"] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("BATEAU SUPPRIMÉ AVEC SUCCÈS")));
@@ -82,7 +92,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     }
   }
 
-  // AFFICHAGE DE LA BOÎTE DE DIALOGUE POUR CONFIRMATION DE SUPPRESSION
+  // DIALOGUE DE CONFIRMATION DE SUPPRESSION
   void _showDeleteConfirmation(int bateauId, String bateauName) {
     showDialog(
       context: context,
@@ -101,7 +111,6 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
                   Navigator.of(context).pop();
                   _deleteBateau(bateauId);
                 },
-
                 style: ElevatedButton.styleFrom(
                   backgroundColor: secondaryColor,
                   shape: RoundedRectangleBorder(
@@ -123,11 +132,12 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     );
   }
 
-  // AFFICHAGE DE LA BOÎTE DE DIALOGUE POUR L'AJOUT D'UN BATEAU
+  // DIALOGUE D'AJOUT D'UN BATEAU
   void _showAddBateauDialog() {
     String nom = "";
     String immatriculation = "";
     String hauteur = "";
+    
     showDialog(
       context: context,
       builder: (context) {
@@ -139,7 +149,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // CHAMP POUR LE NOM DU BATEAU
+                  // CHAMP NOM DU BATEAU
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Nom du bateau",
@@ -170,7 +180,8 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
                     onChanged: (value) => nom = value,
                   ),
                   const SizedBox(height: 16),
-                  // CHAMP POUR L'IMMATRICULATION
+                  
+                  // CHAMP IMMATRICULATION
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Immatriculation",
@@ -201,7 +212,8 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
                     onChanged: (value) => immatriculation = value,
                   ),
                   const SizedBox(height: 16),
-                  // CHAMP POUR LA HAUTEUR EN MÈTRES
+                  
+                  // CHAMP HAUTEUR
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Hauteur (en mètres)",
@@ -250,8 +262,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: secondaryColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16
-                    ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: Text("AJOUTER",
@@ -263,12 +274,13 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     );
   }
 
-  // FONCTION POUR AJOUTER UN BATEAU VIA L'API
+  // AJOUT D'UN NOUVEAU BATEAU
   Future<void> _addBateau(String nom, String immatriculation, String hauteur) async {
     final int? userId = UserSession.userId;
     if (userId == null) {
       return;
     }
+    
     final url = Uri.parse("${ApiConstants.baseUrl}user/addBoat");
     final body = {
       "user_id": userId.toString(),
@@ -276,6 +288,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
       "immatriculation": immatriculation,
       "hauteur_max": hauteur
     };
+    
     try {
       final response = await http.post(
           url,
@@ -283,16 +296,26 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
           body: json.encode(body)
       );
 
-      // Le reste de votre code
+      final data = json.decode(response.body);
+
+      if (data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("BATEAU AJOUTÉ AVEC SUCCÈS"))
+        );
+        await _fetchBateaux(); // ACTUALISATION
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("ERREUR: ${data["message"] ?? "Une erreur est survenue"}"))
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("ERREUR: ${e.toString()}")));
     }
   }
 
-  // CONSTRUIRE LA CARTE D'UN BATEAU
+  // CARTE D'UN BATEAU
   Widget _buildBateauCard(dynamic bateau) {
-
     final int bateauId = bateau['bateau_id'];
     final String libelleBateau = bateau['nom'] ?? "";
     final String immatriculation = bateau['immatriculation'] ?? "";
@@ -352,10 +375,11 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     );
   }
 
-  // CONSTRUIRE LA PAGE DES BATEAUX
+  // CONSTRUCTION DE L'INTERFACE
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // BARRE D'APPLICATION
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: primaryColor,
@@ -368,17 +392,21 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
           ),
         ),
       ),
+      
+      // CONTENU PRINCIPAL
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _bateaux.isEmpty
-          ? Center(child: Text("AUCUN BATEAU ENREGISTRÉ"))
-          : RefreshIndicator(
-        onRefresh: _fetchBateaux,
-        child: ListView.builder(
-          itemCount: _bateaux.length,
-          itemBuilder: (context, index) => _buildBateauCard(_bateaux[index]),
-        ),
-      ),
+              ? Center(child: Text("AUCUN BATEAU ENREGISTRÉ"))
+              : RefreshIndicator(
+                  onRefresh: _fetchBateaux,
+                  child: ListView.builder(
+                    itemCount: _bateaux.length,
+                    itemBuilder: (context, index) => _buildBateauCard(_bateaux[index]),
+                  ),
+                ),
+      
+      // BOUTON D'AJOUT
       floatingActionButton: FloatingActionButton(
         backgroundColor: primaryColor,
         onPressed: _showAddBateauDialog,

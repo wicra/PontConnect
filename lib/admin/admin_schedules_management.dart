@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
 
+// GESTION DES CRÉNEAUX HORAIRES ADMIN
 class AdminCreneauManagement extends StatefulWidget {
   const AdminCreneauManagement({Key? key}) : super(key: key);
 
@@ -33,7 +34,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     });
 
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}admin/creneaux/adminGetHorairesCreneaux.php');
+      final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetHorairesCreneaux');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -60,7 +61,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // RÉCUPÉRATION DES DONNÉES POUR LES FORMULAIRES
   Future<void> _fetchFormData() async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}admin/creneaux/adminGetFormDataHorairesCreneaux.php');
+      final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetFormDataHorairesCreneaux');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -85,7 +86,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // AJOUT D'UN CRÉNEAU
   Future<void> _addCreneau(Map<String, dynamic> creneauData) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/creneaux/adminAddHoraireCreneau.php',
+      url: '${ApiConstants.baseUrl}admin/adminAddHoraireCreneau',
       data: creneauData,
       successMessage: "CRÉNEAU AJOUTÉ AVEC SUCCÈS",
     );
@@ -94,7 +95,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // MISE À JOUR D'UN CRÉNEAU
   Future<void> _updateCreneau(Map<String, dynamic> creneauData) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/creneaux/adminUpdateHoraireCreneau.php',
+      url: '${ApiConstants.baseUrl}admin/adminUpdateHoraireCreneau',
       data: creneauData,
       successMessage: "CRÉNEAU MIS À JOUR AVEC SUCCÈS",
     );
@@ -103,7 +104,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // SUPPRESSION D'UN CRÉNEAU
   Future<void> _deleteCreneau(int creneauId) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/creneaux/adminDeleteHoraireCreneau.php',
+      url: '${ApiConstants.baseUrl}admin/adminDeleteHoraireCreneau',
       data: {"horaires_id": creneauId},
       successMessage: "CRÉNEAU SUPPRIMÉ AVEC SUCCÈS",
     );
@@ -115,6 +116,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     required Map<String, dynamic> data,
     required String successMessage,
   }) async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -127,12 +130,20 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         body: json.encode(data),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         try {
           final respData = json.decode(response.body);
           if (respData['success'] == true) {
-            _showSuccessSnackBar(successMessage);
-            _fetchCreneaux();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+            );
+            
+            await Future.delayed(Duration(milliseconds: 100));
+            if (mounted) {
+              await _fetchCreneaux();
+            }
           } else {
             _showErrorSnackBar(respData['message'] ?? "ERREUR LORS DE L'OPÉRATION");
           }
@@ -574,8 +585,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (departController.text.isEmpty) {
-                  _showErrorSnackBar("L'HEURE DE DÉPART EST OBLIGATOIRE");
+                if (departController.text.isEmpty || passage1Controller.text.isEmpty || passage2Controller.text.isEmpty || passage3Controller.text.isEmpty) {
+                  _showErrorSnackBar("TOUS LES CHAMPS SONT OBLIGATOIRES");
                   return;
                 }
 
@@ -584,9 +595,9 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   'periode_id': periodeId,
                   'direction_id': directionId,
                   'horaire_depart': departController.text.trim(),
-                  'horaire_passage1': passage1Controller.text.isNotEmpty ? passage1Controller.text.trim() : null,
-                  'horaire_passage2': passage2Controller.text.isNotEmpty ? passage2Controller.text.trim() : null,
-                  'horaire_passage3': passage3Controller.text.isNotEmpty ? passage3Controller.text.trim() : null
+                  'horaire_passage1': passage1Controller.text.trim(),
+                  'horaire_passage2': passage2Controller.text.trim(),
+                  'horaire_passage3': passage3Controller.text.trim()
                 };
 
                 if (isEditing) {
@@ -718,6 +729,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // BARRE D'APPLICATION
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: primaryColor,
@@ -726,44 +738,48 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: backgroundLight),
         ),
       ),
+      
+      // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: primaryColor))
           : _creneaux.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.schedule, size: 80, color: textSecondary.withOpacity(0.5)),
-            const SizedBox(height: 24),
-            Text(
-              "AUCUN CRÉNEAU HORAIRE TROUVÉ",
-              style: TextStyle(fontSize: 18, color: textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "AJOUTEZ UN NOUVEAU CRÉNEAU AVEC LE BOUTON CI-DESSOUS",
-              style: TextStyle(fontSize: 14, color: textSecondary),
-            ),
-          ],
-        ),
-      )
-          : RefreshIndicator(
-        onRefresh: _fetchCreneaux,
-        color: primaryColor,
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          itemCount: _creneaux.length,
-          itemBuilder: (context, index) => _buildCreneauCard(_creneaux[index]),
-        ),
-      ),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.schedule, size: 80, color: textSecondary.withOpacity(0.5)),
+                      const SizedBox(height: 24),
+                      Text(
+                        "AUCUN CRÉNEAU HORAIRE TROUVÉ",
+                        style: TextStyle(fontSize: 18, color: textPrimary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "AJOUTEZ UN NOUVEAU CRÉNEAU AVEC LE BOUTON CI-DESSOUS",
+                        style: TextStyle(fontSize: 14, color: textSecondary),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _fetchCreneaux,
+                  color: primaryColor,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    itemCount: _creneaux.length,
+                    itemBuilder: (context, index) => _buildCreneauCard(_creneaux[index]),
+                  ),
+                ),
+      
+      // BOUTON D'AJOUT
       floatingActionButton: _isFormDataLoaded
           ? FloatingActionButton(
-        backgroundColor: primaryColor,
-        onPressed: () => _showCreneauDialog(),
-        tooltip: 'AJOUTER UN CRÉNEAU',
-        child: const Icon(Icons.add, color: backgroundLight),
-      )
+              backgroundColor: primaryColor,
+              onPressed: () => _showCreneauDialog(),
+              tooltip: 'AJOUTER UN CRÉNEAU',
+              child: const Icon(Icons.add, color: backgroundLight),
+            )
           : null,
     );
   }

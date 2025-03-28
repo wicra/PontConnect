@@ -4,17 +4,17 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:pontconnect/auth/user_session_storage.dart';
 
-// IMPORT DES CONSTANTES (API & COULEURS)
+// IMPORT DES CONSTANTES
 import 'package:pontconnect/constants.dart';
 
-// PAGE DE MES RÉSERVATIONS POUR L'UTILISATEUR
+// ÉCRAN DES RÉSERVATIONS UTILISATEUR
 class ViewMyReservations extends StatefulWidget {
   @override
   _ViewMyReservationsState createState() => _ViewMyReservationsState();
 }
 
 class _ViewMyReservationsState extends State<ViewMyReservations> {
-  // VARIABLES DE GESTION
+  // VARIABLES D'ÉTAT
   bool _isLoading = false;
   List<dynamic> _reservations = [];
 
@@ -24,21 +24,27 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     _fetchReservations();
   }
 
-  // FONCTION POUR RÉCUPÉRER LES RÉSERVATIONS DE L'UTILISATEUR VIA L'API
+  // RÉCUPÉRATION DES RÉSERVATIONS
   Future<void> _fetchReservations() async {
     final int? userId = UserSession.userId;
+
     if (userId == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")));
       return;
     }
+
     setState(() {
       _isLoading = true;
     });
+
+    // APPEL API
     final url = Uri.parse("${ApiConstants.baseUrl}user/getUserReservations?user_id=$userId");
+    
     try {
       final response = await http.get(url);
       final data = json.decode(response.body);
+
       if (data["success"] == true) {
         setState(() {
           _reservations = data["reservations"];
@@ -51,20 +57,19 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("ERREUR : ${e.toString()}")));
     }
+
     setState(() {
       _isLoading = false;
     });
   }
 
-  // FONCTION POUR DÉTERMINER LA COULEUR APPROPRIÉE EN FONCTION DU STATUT DE LA RÉSERVATION
+  // GESTION DES COULEURS PAR STATUT
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case "CONFIRMÉ":
+      case "CONFIRME":
         return primaryColor;
-      case "ANNULÉ":
+      case "ANNULE":
         return accentColor;
-      case "MAINTENANCE":
-        return secondaryColor;
       case "EN ATTENTE":
         return tertiaryColor;
       default:
@@ -72,16 +77,15 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     }
   }
 
-  // FONCTION POUR METTRE À JOUR LE STATUT D'UNE RÉSERVATION VIA L'API
-  // FONCTION POUR METTRE À JOUR LE STATUT D'UNE RÉSERVATION VIA L'API
+  // MISE À JOUR DU STATUT DE RÉSERVATION
   Future<void> _updateStatus(String reservationId, String newStatus, dynamic reservation) async {
+    // PRÉPARATION REQUÊTE API
     final url = Uri.parse("${ApiConstants.baseUrl}user/updateReservationStatus");
 
-    // Construire un body plus complet avec les informations de la réservation
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus.toLowerCase(),
-      "actual_id": reservation['actual_id'], // Utiliser l'ID réel si disponible
+      "actual_id": reservation['actual_id'],
       "date_reservation": reservation['reservation_date'],
       "horaires_id": reservation['horaires_id'],
       "user_id": reservation['user_id'],
@@ -90,9 +94,14 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     });
 
     try {
-      final response = await http.post(url,
-          headers: {"Content-Type": "application/json"}, body: body);
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"}, 
+        body: body
+      );
+      
       final data = json.decode(response.body);
+      
       if (data["success"] == true) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("STATUT MIS À JOUR")));
@@ -107,16 +116,18 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     }
   }
 
-  // FONCTION POUR VÉRIFIER SI LA RÉSERVATION EST DÉPASSÉE
+  // VÉRIFICATION RÉSERVATION PASSÉE
   bool _isReservationPast(dynamic reservation) {
     final String dateStr = reservation['reservation_date'] ?? "";
     if (dateStr.isEmpty) return false;
+    
     DateTime reservationDate;
     try {
       reservationDate = DateFormat('yyyy-MM-dd').parse(dateStr);
     } catch (e) {
       return false;
     }
+
     final String creneauStr = reservation['creneau'] ?? "";
     if (creneauStr.contains("-")) {
       final parts = creneauStr.split("-");
@@ -148,14 +159,14 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     return DateTime.now().isAfter(reservationDate);
   }
 
-  // CONSTRUIRE LA CARTE DE CHAQUE RÉSERVATION
+  // CONSTRUCTION CARTE DE RÉSERVATION
   Widget _buildReservationCard(dynamic reservation) {
+    // DONNÉES DE LA RÉSERVATION
     final String reservationId = reservation['reservation_id'] ?? "";
     final String pontName = reservation['pont_name'] ?? "PONT INCONNU";
     final String creneau = reservation['creneau'] ?? "";
     final String reservationDateStr = reservation['reservation_date'] ?? "";
     final String realStatus = (reservation['statut'] ?? "EN ATTENTE").toUpperCase();
-    // INFORMATION SUPPLÉMENTAIRE : NOM DU BATEAU ASSOCIÉ
     final String bateauName = reservation['bateau_name'] ?? "BATEAU INCONNU";
 
     final List<String> allowedStatusOptions = ["EN ATTENTE", "ANNULÉ"];
@@ -163,6 +174,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     final bool isPast = _isReservationPast(reservation);
     final Color cardBackground = isPast ? backgroundCard : backgroundLight;
 
+    // AFFICHAGE DE LA CARTE
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -173,7 +185,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // LIGNE 1 : EN-TÊTE AVEC NOM DU PONT ET DU BATEAU, ET STATUT
+            // EN-TÊTE AVEC INFORMATIONS PRINCIPALES
             Row(
               children: [
                 Expanded(
@@ -201,101 +213,104 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                     ],
                   ),
                 ),
+                
+                // AFFICHAGE DU STATUT (TEXTE OU MENU DÉROULANT)
                 isPast
-                    ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _getStatusColor(realStatus)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    realStatus,
-                    style: TextStyle(
-                      fontFamily: 'DarumadropOne',
-                      color: _getStatusColor(realStatus),
-                      fontSize: 14,
-                    ),
-                  ),
-                )
-                    : Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _getStatusColor(realStatus)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButton<String>(
-                    value: currentStatusAllowed ? realStatus : null,
-                    hint: Text(
-                      realStatus,
-                      style: TextStyle(
-                        fontFamily: 'DarumadropOne',
-                        color: _getStatusColor(realStatus),
-                        fontSize: 14,
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _getStatusColor(realStatus)),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
-                    icon: Icon(Icons.arrow_drop_down, color: _getStatusColor(realStatus)),
-                    style: TextStyle(
-                      fontFamily: 'DarumadropOne',
-                      color: _getStatusColor(realStatus),
-                      fontSize: 14,
-                    ),
-                    dropdownColor: backgroundCream,
-                    underline: Container(),
-                    items: allowedStatusOptions.map((statusOption) {
-                      return DropdownMenuItem<String>(
-                        value: statusOption,
-                        child: Text(
-                          statusOption,
+                      child: Text(
+                        realStatus,
+                        style: TextStyle(
+                          fontFamily: 'DarumadropOne',
+                          color: _getStatusColor(realStatus),
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _getStatusColor(realStatus)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<String>(
+                        value: currentStatusAllowed ? realStatus : null,
+                        hint: Text(
+                          realStatus,
                           style: TextStyle(
                             fontFamily: 'DarumadropOne',
-                            color: _getStatusColor(statusOption),
+                            color: _getStatusColor(realStatus),
                             fontSize: 14,
                           ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (String? newStatus) {
-                      if (newStatus != null && newStatus != realStatus) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              backgroundColor: backgroundLight,
-                              title: Text(
-                                "CONFIRMER",
-                                style: TextStyle(fontFamily: 'DarumadropOne', color: textPrimary),
+                        icon: Icon(Icons.arrow_drop_down, color: _getStatusColor(realStatus)),
+                        style: TextStyle(
+                          fontFamily: 'DarumadropOne',
+                          color: _getStatusColor(realStatus),
+                          fontSize: 14,
+                        ),
+                        dropdownColor: backgroundCream,
+                        underline: Container(),
+                        items: allowedStatusOptions.map((statusOption) {
+                          return DropdownMenuItem<String>(
+                            value: statusOption,
+                            child: Text(
+                              statusOption,
+                              style: TextStyle(
+                                fontFamily: 'DarumadropOne',
+                                color: _getStatusColor(statusOption),
+                                fontSize: 14,
                               ),
-                              content: Container(
-                                width: 450,
-                                child: Text(
-                                  "CHANGER LE STATUT EN '$newStatus' ?",
-                                  style: TextStyle(fontFamily: 'DarumadropOne'),
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: Text("ANNULER", style: TextStyle(fontFamily: 'DarumadropOne')),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    _updateStatus(reservationId, newStatus, reservation);
-                                  },
-                                  child: Text("CONFIRMER", style: TextStyle(fontFamily: 'DarumadropOne')),
-                                ),
-                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newStatus) {
+                          if (newStatus != null && newStatus != realStatus) {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  backgroundColor: backgroundLight,
+                                  title: Text(
+                                    "CONFIRMER",
+                                    style: TextStyle(fontFamily: 'DarumadropOne', color: textPrimary),
+                                  ),
+                                  content: Container(
+                                    width: 450,
+                                    child: Text(
+                                      "CHANGER LE STATUT EN '$newStatus' ?",
+                                      style: TextStyle(fontFamily: 'DarumadropOne'),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: Text("ANNULER", style: TextStyle(fontFamily: 'DarumadropOne')),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        _updateStatus(reservationId, newStatus, reservation);
+                                      },
+                                      child: Text("CONFIRMER", style: TextStyle(fontFamily: 'DarumadropOne')),
+                                    ),
+                                  ],
+                                );
+                              },
                             );
-                          },
-                        );
-                      }
-                    },
-                  ),
-                ),
+                          }
+                        },
+                      ),
+                    ),
               ],
             ),
             const SizedBox(height: 8),
-            // LIGNE 2 : AFFICHAGE DU CRÉNEAU
+
+            // CRÉNEAU HORAIRE
             Text(
               creneau,
               style: TextStyle(
@@ -306,7 +321,8 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
               ),
             ),
             const SizedBox(height: 8),
-            // LIGNE 3 : AFFICHAGE DE LA DATE DE RÉSERVATION
+            
+            // DATE DE RÉSERVATION
             Text(
               "DATE : ${DateFormat('yyyy-MM-dd').format(DateTime.tryParse(reservationDateStr) ?? DateTime.now())}",
               style: TextStyle(
@@ -321,10 +337,11 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     );
   }
 
-  // CONSTRUIRE LA PAGE MES RÉSERVATIONS
+  // CONSTRUCTION DE L'INTERFACE
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // BARRE D'APPLICATION
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: primaryColor,
@@ -336,29 +353,39 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
             color: backgroundLight,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: backgroundLight),
+            onPressed: () => _fetchReservations(),
+            tooltip: "ACTUALISER",
+          ),
+        ],
       ),
+      
+      // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
-          : _reservations.isEmpty
+        ? Center(child: CircularProgressIndicator(color: primaryColor))
+        : _reservations.isEmpty
           ? Center(
-        child: Text(
-          "AUCUNE RÉSERVATION",
-          style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'DarumadropOne',
-              color: textPrimary),
-        ),
-      )
+              child: Text(
+                "AUCUNE RÉSERVATION",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'DarumadropOne',
+                  color: textPrimary
+                ),
+              ),
+            )
           : RefreshIndicator(
-        onRefresh: _fetchReservations,
-        child: ListView.builder(
-          itemCount: _reservations.length,
-          itemBuilder: (context, index) {
-            return _buildReservationCard(_reservations[index]);
-          },
-        ),
-      ),
+              onRefresh: _fetchReservations,
+              child: ListView.builder(
+                itemCount: _reservations.length,
+                itemBuilder: (context, index) {
+                  return _buildReservationCard(_reservations[index]);
+                },
+              ),
+            ),
     );
   }
 }
