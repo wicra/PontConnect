@@ -95,10 +95,10 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     String niveauEauStatus = "NORMAL";
 
     if (niveauEauValue > 7) {
-      niveauEauColor = Colors.red;
+      niveauEauColor = accentColor;
       niveauEauStatus = "CRITIQUE";
     } else if (niveauEauValue > 5) {
-      niveauEauColor = Colors.orange;
+      niveauEauColor = tertiaryColor;
       niveauEauStatus = "ÉLEVÉ";
     }
 
@@ -107,10 +107,10 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     String temperatureStatus = "NORMAL";
 
     if (temperatureValue < 0) {
-      temperatureColor = Colors.blue;
+      temperatureColor = secondaryColor;
       temperatureStatus = "GEL";
     } else if (temperatureValue > 30) {
-      temperatureColor = Colors.red;
+      temperatureColor = accentColor;
       temperatureStatus = "ÉLEVÉE";
     }
 
@@ -120,10 +120,10 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     String qualiteEauStatus = "BONNE";
 
     if (qualiteEauValue > 800) {
-      qualiteEauColor = Colors.red;
+      qualiteEauColor = accentColor;
       qualiteEauStatus = "MAUVAISE";
     } else if (qualiteEauValue > 500) {
-      qualiteEauColor = Colors.orange;
+      qualiteEauColor = tertiaryColor;
       qualiteEauStatus = "MOYENNE";
     }
 

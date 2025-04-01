@@ -102,8 +102,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
           if (data["success"] == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(data["message"], style: TextStyle(color: Colors.white)),
-                backgroundColor: Colors.green,
+                content: Text(data["message"], style: TextStyle(color: backgroundLight)),
+                backgroundColor: primaryColor,
               ),
             );
             // RECHARGER LES RÉSERVATIONS
@@ -115,8 +115,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(data["message"] ?? "Erreur inconnue", style: TextStyle(color: Colors.white)),
-                backgroundColor: Colors.red,
+                content: Text(data["message"] ?? "Erreur inconnue", style: TextStyle(color: backgroundLight)),
+                backgroundColor: accentColor,
               ),
             );
           }
@@ -127,8 +127,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Erreur: Réponse non valide", style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.red,
+              content: Text("Erreur: Réponse non valide", style: TextStyle(color: backgroundLight)),
+              backgroundColor: accentColor,
             ),
           );
         }
@@ -143,16 +143,16 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
           final errorData = json.decode(response.body);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Erreur ${response.statusCode}: ${errorData['message'] ?? 'Inconnu'}", style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.red,
+              content: Text("Erreur ${response.statusCode}: ${errorData['message'] ?? 'Inconnu'}", style: TextStyle(color: backgroundLight)),
+              backgroundColor: accentColor,
             ),
           );
         } catch (e) {
           // Fallback pour les erreurs non-JSON
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Erreur ${response.statusCode}", style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.red,
+              content: Text("Erreur ${response.statusCode}", style: TextStyle(color: backgroundLight)),
+              backgroundColor: accentColor,
             ),
           );
         }
@@ -165,8 +165,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("ERREUR: $e", style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
+          content: Text("ERREUR: $e", style: TextStyle(color: backgroundLight)),
+          backgroundColor: accentColor,
         ),
       );
     }
@@ -176,12 +176,12 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case "confirmé":
-        return Colors.green;
+        return primaryColor;
       case "annulé":
-        return Colors.red;
+        return accentColor;
       case "en attente":
       default:
-        return Colors.orange;
+        return tertiaryColor;
     }
   }
 
@@ -261,7 +261,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: backgroundLight,
                       fontFamily: 'DarumadropOne',
                     ),
                   ),
@@ -393,9 +393,9 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: progress >= 0.8 ? Colors.red :
-                                 progress >= 0.5 ? Colors.orange :
-                                 Colors.green,
+                          color: progress >= 0.8 ? accentColor :
+                                 progress >= 0.5 ? tertiaryColor :
+                                 primaryColor,
                           fontFamily: 'DarumadropOne',
                         ),
                       ),
@@ -413,9 +413,9 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                     minHeight: 8,
                     backgroundColor: textSecondary.withOpacity(0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 0.8 ? Colors.red :
-                        progress >= 0.5 ? Colors.orange :
-                        Colors.green
+                        progress >= 0.8 ? accentColor:
+                        progress >= 0.5 ? tertiaryColor :
+                        primaryColor
                     ),
                   ),
                 ),
@@ -484,7 +484,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                                   _updateStatus(reservationId, "confirmé");
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: primaryColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -493,7 +493,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                                   "CONFIRMER",
                                   style: TextStyle(
                                     fontFamily: 'DarumadropOne',
-                                    color: Colors.white,
+                                    color: backgroundLight,
                                   ),
                                 ),
                               ),
@@ -501,17 +501,17 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                           ),
                         );
                       },
-                      icon: Icon(Icons.check_circle, color: Colors.white),
+                      icon: Icon(Icons.check_circle, color: backgroundLight),
                       label: Text(
                         "CONFIRMER",
                         style: TextStyle(
                           fontSize: 12,
                           fontFamily: 'DarumadropOne',
-                          color: Colors.white,
+                          color: backgroundLight,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: primaryColor,
                         disabledBackgroundColor: Colors.green.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -558,7 +558,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                                   _updateStatus(reservationId, "annulé");
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: accentColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -567,7 +567,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                                   "ANNULER",
                                   style: TextStyle(
                                     fontFamily: 'DarumadropOne',
-                                    color: Colors.white,
+                                    color: backgroundLight,
                                   ),
                                 ),
                               ),
@@ -575,17 +575,17 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                           ),
                         );
                       },
-                      icon: Icon(Icons.cancel, color: Colors.white),
+                      icon: Icon(Icons.cancel, color: backgroundLight),
                       label: Text(
                         "ANNULER",
                         style: TextStyle(
                           fontSize: 12,
                           fontFamily: 'DarumadropOne',
-                          color: Colors.white,
+                          color: backgroundLight,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: accentColor,
                         disabledBackgroundColor: Colors.red.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -655,7 +655,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red,
+                        color: accentColor,
                         size: 60,
                       ),
                       SizedBox(height: 16),
@@ -663,7 +663,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                         "ERREUR",
                         style: TextStyle(
                             fontSize: 18,
-                            color: Colors.red,
+                            color: accentColor,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'DarumadropOne'
                         ),
@@ -684,11 +684,11 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                       SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _fetchReservations,
-                        icon: Icon(Icons.refresh, color: Colors.white),
+                        icon: Icon(Icons.refresh, color: backgroundLight),
                         label: Text(
                           "RÉESSAYER",
                           style: TextStyle(
-                              color: Colors.white,
+                              color: backgroundLight,
                               fontFamily: 'DarumadropOne'
                           ),
                         ),
@@ -724,11 +724,11 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                           SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: _fetchReservations,
-                            icon: Icon(Icons.refresh, color: Colors.white),
+                            icon: Icon(Icons.refresh, color: backgroundLight),
                             label: Text(
                               "ACTUALISER",
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: backgroundLight,
                                   fontFamily: 'DarumadropOne'
                               ),
                             ),

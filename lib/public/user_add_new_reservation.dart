@@ -166,7 +166,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message.toUpperCase()),
-              backgroundColor: Colors.green,
+              backgroundColor: primaryColor,
             )
         );
       } else {
@@ -176,7 +176,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("ERREUR: ${message.toUpperCase()}"),
-              backgroundColor: Colors.red,
+              backgroundColor: accentColor,
             )
         );
       }
@@ -186,7 +186,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("ERREUR: $e"),
-            backgroundColor: Colors.red,
+            backgroundColor: accentColor,
           )
       );
     }

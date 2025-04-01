@@ -137,7 +137,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
           final respData = json.decode(response.body);
           if (respData['success'] == true) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+              SnackBar(content: Text(successMessage), backgroundColor: primaryColor),
             );
             
             await Future.delayed(Duration(milliseconds: 100));
@@ -165,14 +165,14 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // AFFICHAGE DES MESSAGES D'ERREUR
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(content: Text(message), backgroundColor: accentColor),
     );
   }
 
   // AFFICHAGE DES MESSAGES DE SUCCÈS
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
+      SnackBar(content: Text(message), backgroundColor: primaryColor),
     );
   }
 
@@ -200,19 +200,19 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
       case 1:
         directionIcon = Icons.logout;
         directionLabel = "SORTIE";
-        directionColor = Colors.green;
+        directionColor = primaryColor;
         imagePath = 'assets/images/sortie.webp';
         break;
       case 2:
         directionIcon = Icons.login;
         directionLabel = "ENTRÉE";
-        directionColor = Colors.blue;
+        directionColor = secondaryColor ;
         imagePath = 'assets/images/entre.webp';
         break;
       default:
         directionIcon = Icons.swap_horiz;
         directionLabel = "AUTRE";
-        directionColor = Colors.orange;
+        directionColor = tertiaryColor;
         imagePath = 'assets/images/default.webp';
     }
 
@@ -230,7 +230,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: backgroundLight,
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
@@ -342,11 +342,11 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   children: [
                     _buildTimeItem("DÉPART", departTime, Icons.directions_boat_filled_outlined, directionColor),
                     if (passage1Time != "--:--")
-                      _buildTimeItem("P1", passage1Time, Icons.access_time, Colors.grey[700]!),
+                      _buildTimeItem("P1", passage1Time, Icons.access_time, textSecondary),
                     if (passage2Time != "--:--")
-                      _buildTimeItem("P2", passage2Time, Icons.access_time, Colors.grey[700]!),
+                      _buildTimeItem("P2", passage2Time, Icons.access_time, textSecondary),
                     if (passage3Time != "--:--")
-                      _buildTimeItem("P3", passage3Time, Icons.access_time, Colors.grey[700]!),
+                      _buildTimeItem("P3", passage3Time, Icons.access_time, textSecondary),
                   ],
                 ),
               ],
@@ -378,7 +378,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   icon: Icon(Icons.delete_outline, size: 18),
                   label: Text("SUPPRIMER"),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
+                    foregroundColor: accentColor,
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     minimumSize: Size.zero,
                   ),
@@ -441,10 +441,10 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
               _deleteCreneau(creneauId);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: accentColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text("SUPPRIMER", style: TextStyle(color: Colors.white)),
+            child: const Text("SUPPRIMER", style: TextStyle(color: backgroundLight)),
           )
         ],
       ),
@@ -614,7 +614,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
               ),
               child: Text(
                 isEditing ? "MODIFIER" : "AJOUTER",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: backgroundLight),
               ),
             ),
           ],
@@ -669,7 +669,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
               hintText: "HH:MM",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey),
+                borderSide: BorderSide(color: textSecondary),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
