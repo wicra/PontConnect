@@ -1,4 +1,4 @@
-## PontConnect - Projet 150h
+![Logo PontConnect](assets/images/logo.svg)
 
 ### Description
 
@@ -11,17 +11,6 @@ Le projet **"PontConnect"** est un projet de fin d'année du BTS CIEL Informatiq
 - **Visualisation des données des ponts** : L'application permet de consulter les données des capteurs associés aux ponts, telles que la température, la qualité de l'eau et le niveau d'eau.
 - **Notifications en temps réel** : Les utilisateurs reçoivent des notifications concernant les changements de statut des ponts, les confirmations de réservation, et plus encore.
 
-### Technologies utilisées
-
-- **Monday.com** : Utilisé pour la gestion et la planification du projet.
-- **Flutter & Dart** : Framework et langage pour le développement de l'application mobile.
-- **PHP & MySQL** : Utilisés pour le développement de l'API REST et la gestion de la base de données pour le backend.
-- **Domotique** : Intégration de capteurs pour la gestion des ponts, incluant :
-    - **Température** (pour détecter si l'eau est gelée)
-    - **Qualité de l'eau** (analyse de la pollution)
-    - **Niveau d'eau** (bas ou haut)
-    - **LoRa** avec des modules **LilyGo ESP** pour la communication sans fil
-
 ### Objectifs
 
 - Améliorer l'efficacité de la gestion des ponts mobiles.
@@ -29,3 +18,6 @@ Le projet **"PontConnect"** est un projet de fin d'année du BTS CIEL Informatiq
 - Optimiser le trafic fluvial.
 - Faciliter l'accès aux données liées aux ponts.
 - Fournir une plateforme conviviale et intuitive pour les utilisateurs.
+
+### L'api rest
+- [API](https://github.com/wicra/PontConnect-REST-Node/)
