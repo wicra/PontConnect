@@ -29,6 +29,16 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
   // RÉCUPÉRATION DES CRÉNEAUX DISPONIBLES
   Future<void> _fetchCreneaux() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     if (_selectedDate == null) return;
 
     setState(() {
@@ -38,7 +48,13 @@ class _UserAddReservationState extends State<UserAddReservation> {
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
     final url = Uri.parse("${ApiConstants.baseUrl}user/getCreneaux?date=$dateStr");
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -50,7 +66,17 @@ class _UserAddReservationState extends State<UserAddReservation> {
           }
           _isLoadingCreneaux = false;
         });
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      
+      else {
         setState(() {
           _isLoadingCreneaux = false;
         });
@@ -69,6 +95,16 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
   // RÉCUPÉRATION DES BATEAUX DE L'UTILISATEUR
   Future<void> _fetchBateaux() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoadingBateaux = true;
     });
@@ -85,14 +121,31 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
     final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           _bateaux = data["bateaux"] ?? [];
           _isLoadingBateaux = false;
         });
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }   
+      
+      else {
         setState(() {
           _isLoadingBateaux = false;
         });
@@ -111,6 +164,15 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
   // VALIDATION ET ENVOI DE LA RÉSERVATION
   Future<void> _reserve() async {
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     if (_selectedCreneauId == null || _selectedDate == null || _selectedBateauId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("VEUILLEZ REMPLIR TOUS LES CHAMPS")));
@@ -148,8 +210,13 @@ class _UserAddReservationState extends State<UserAddReservation> {
     });
 
     try {
-      final response = await http.post(url,
-          headers: {"Content-Type": "application/json"}, body: body);
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token", // TOKEN JWT
+        }, 
+        body: body);
 
       Navigator.pop(context);
 
@@ -169,7 +236,17 @@ class _UserAddReservationState extends State<UserAddReservation> {
               backgroundColor: primaryColor,
             )
         );
-      } else {
+      }
+      
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      else {
         final jsonResponse = json.decode(response.body);
         String message = jsonResponse is String ? jsonResponse : jsonResponse["message"];
 

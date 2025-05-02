@@ -39,8 +39,6 @@ class _LoginPageState extends State<LoginPage> {
           'password': _passwordController.text.trim(),
         }),
       );
-      print('Statut: ${response.statusCode}');
-      print('Corps: ${response.body}');
 
       final data = jsonDecode(response.body);
 
@@ -52,6 +50,7 @@ class _LoginPageState extends State<LoginPage> {
           name: data['user']['name'],
           email: data['user']['email'],
           type: data['user']['type_user_id'],
+          token: data['token'],
         );
 
         // CONNEXION REUSSI & REDIRECTION

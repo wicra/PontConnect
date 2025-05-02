@@ -26,6 +26,16 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
 
   // RÉCUPÉRATION DES BATEAUX DE L'UTILISATEUR
   Future<void> _fetchBateaux() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+    
     final int? userId = UserSession.userId;
 
     if (userId == null) {
@@ -43,14 +53,32 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
     
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
       final data = json.decode(response.body);
       
+      // SUCCÈS
       if (data["success"] == true && data["bateaux"] != null) {
         setState(() {
           _bateaux = data["bateaux"];
         });
-      } else {
+      } 
+      
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      // AUTRES ERREUR
+      else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("ERREUR LORS DE LA RÉCUPÉRATION DES BATEAUX")),
         );
@@ -68,6 +96,16 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
 
   // SUPPRESSION D'UN BATEAU
   Future<void> _deleteBateau(int bateauId) async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     final int? userId = UserSession.userId;
     if (userId == null) return;
     
@@ -75,16 +113,33 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
         "${ApiConstants.baseUrl}user/deleteBoat?bateau_id=$bateauId&user_id=$userId");
     
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+          url,
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': 'Bearer $token', // TOKEN JWT
+          },
+      );
+
       final data = json.decode(response.body);
       
+      // SUPPRESSION DU BATEAU RÉUSSIE
       if (data["success"] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("BATEAU SUPPRIMÉ AVEC SUCCÈS")));
         _fetchBateaux();
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("ERREUR : ${data["message"]}")));
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("ERREUR : ${data["message"]}")));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -276,6 +331,16 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
 
   // AJOUT D'UN NOUVEAU BATEAU
   Future<void> _addBateau(String nom, String immatriculation, String hauteur) async {
+    
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     final int? userId = UserSession.userId;
     if (userId == null) {
       return;
@@ -292,18 +357,32 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     try {
       final response = await http.post(
           url,
-          headers: {"Content-Type": "application/json"},
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': 'Bearer $token', // TOKEN JWT
+          },
           body: json.encode(body)
       );
 
       final data = json.decode(response.body);
 
+      // AJOUT DU BATEAU RÉUSSI
       if (data["success"] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("BATEAU AJOUTÉ AVEC SUCCÈS"))
         );
         await _fetchBateaux(); // ACTUALISATION
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      
+      else {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("ERREUR: ${data["message"] ?? "Une erreur est survenue"}"))
         );

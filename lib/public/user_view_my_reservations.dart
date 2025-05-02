@@ -26,6 +26,17 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
 
   // RÉCUPÉRATION DES RÉSERVATIONS
   Future<void> _fetchReservations() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
+
     final int? userId = UserSession.userId;
 
     if (userId == null) {
@@ -42,14 +53,31 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     final url = Uri.parse("${ApiConstants.baseUrl}user/getUserReservations?user_id=$userId");
     
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
       final data = json.decode(response.body);
 
+      // SUCCÈS
       if (data["success"] == true) {
         setState(() {
           _reservations = data["reservations"];
         });
-      } else {
+      }
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      } 
+      
+      else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("ERREUR API")));
       }
@@ -79,6 +107,16 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
 
   // MISE À JOUR DU STATUT DE RÉSERVATION
   Future<void> _updateStatus(String reservationId, String newStatus, dynamic reservation) async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     // PRÉPARATION REQUÊTE API
     final url = Uri.parse("${ApiConstants.baseUrl}user/updateReservationStatus");
 
@@ -96,17 +134,31 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     try {
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"}, 
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        }, 
         body: body
       );
       
       final data = json.decode(response.body);
       
+      // SUCCÈS
       if (data["success"] == true) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("STATUT MIS À JOUR")));
         _fetchReservations();
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      
+      else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("ERREUR LORS DE LA MISE À JOUR: ${data["message"]}")));
       }

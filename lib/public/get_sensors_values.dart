@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:pontconnect/constants.dart';
+import '../auth/user_session_storage.dart';
 
 class GetSensorsValues extends StatefulWidget {
   const GetSensorsValues({Key? key}) : super(key: key);
@@ -31,9 +32,27 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
   // RÉCUPÉRATION DES DONNÉES CAPTEURS
   Future<void> _fetchCapteurs({bool silent = false}) async {
+
+    // RÉCUPÉRATION DU TOKEN
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
+
     try {
+      // APPEL API
       final url = Uri.parse('${ApiConstants.baseUrl}user/GetSensorValues');
-      final response = await http.get(url).timeout(const Duration(seconds: 20));
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      ).timeout(const Duration(seconds: 20));
       final data = json.decode(response.body);
 
       if (data['success'] == true) {
@@ -59,7 +78,17 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
             const SnackBar(content: Text("DONNÉES NON À JOUR DEPUIS PLUS DE 4 HEURES")),
           );
         }
-      } else if (!silent) {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      else if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text((data['message'] ?? "ERREUR DE RÉCUPÉRATION").toString().toUpperCase())),
         );

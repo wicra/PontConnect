@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
+import 'package:pontconnect/auth/user_session_storage.dart';
 
 // GESTION DES CRÉNEAUX HORAIRES ADMIN
 class AdminCreneauManagement extends StatefulWidget {
@@ -29,14 +30,31 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // RÉCUPÉRATION DES CRÉNEAUX
   Future<void> _fetchCreneaux() async {
+    
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetHorairesCreneaux');
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
 
+      // SUCCÈS
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -46,7 +64,17 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         } else {
           _showErrorSnackBar(data['message'] ?? "ERREUR LORS DE LA RÉCUPÉRATION DES CRÉNEAUX");
         }
-      } else {
+      } 
+      
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      else {
         _showErrorSnackBar("ERREUR ${response.statusCode}");
       }
     } catch (e) {
@@ -60,12 +88,30 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // RÉCUPÉRATION DES DONNÉES POUR LES FORMULAIRES
   Future<void> _fetchFormData() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetFormDataHorairesCreneaux');
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        // SUCCÈS
         if (data['success'] == true) {
           setState(() {
             _periodes = data['periodes'];
@@ -75,7 +121,18 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         } else {
           _showErrorSnackBar(data['message'] ?? "ERREUR LORS DE LA RÉCUPÉRATION DES DONNÉES DE FORMULAIRE");
         }
-      } else {
+      }
+      
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      // AUTRES ERREURS
+      else {
         _showErrorSnackBar("ERREUR ${response.statusCode}");
       }
     } catch (e) {
@@ -111,11 +168,17 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   }
 
   // MÉTHODE GÉNÉRIQUE POUR LES REQUÊTES POST
-  Future<void> _postRequest({
-    required String url,
-    required Map<String, dynamic> data,
-    required String successMessage,
-  }) async {
+  Future<void> _postRequest({ required String url, required Map<String, dynamic> data, required String successMessage,}) async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     if (!mounted) return;
 
     setState(() {
@@ -126,7 +189,10 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
       final response = await http.post(
         uri,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
         body: json.encode(data),
       );
 
@@ -150,7 +216,18 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         } catch (e) {
           _showErrorSnackBar("ERREUR DE DÉCODAGE JSON: $e");
         }
-      } else {
+      } 
+      
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      // AUTRES ERREURS
+      else {
         _showErrorSnackBar("ERREUR HTTP ${response.statusCode}");
       }
     } catch (e) {

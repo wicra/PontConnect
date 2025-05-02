@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
+import 'package:pontconnect/auth/user_session_storage.dart';
 
 // GESTION DES RÉSERVATIONS EN ATTENTE
 class AdminPendingReservations extends StatefulWidget {
@@ -23,6 +24,16 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
   // RÉCUPÉRATION DES RÉSERVATIONS
   Future<void> _fetchReservations() async {
+
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = "";
@@ -30,7 +41,13 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
     final url = Uri.parse("${ApiConstants.baseUrl}admin/getPendingReservations");
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },      
+      );
 
       // VÉRIFIER SI LA RÉPONSE EST DU JSON VALIDE
       if (response.statusCode != 200 || response.body.contains("<!DOCTYPE")) {
@@ -42,11 +59,23 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
       }
 
       final data = json.decode(response.body);
+
+      // SUCCÈS
       if (data["success"] == true) {
         setState(() {
           _reservations = data["reservations"];
         });
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+
+      else {
         setState(() {
           _errorMessage = data["message"] ?? "Erreur inconnue";
         });
@@ -69,6 +98,16 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
   // MISE À JOUR DU STATUT DE RÉSERVATION
   Future<void> _updateStatus(String reservationId, String newStatus) async {
+    
+    // RECUPERATION DU TOKEN JWT
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+    
     setState(() {
       _isLoading = true;
     });
@@ -80,25 +119,21 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
     });
 
     try {
-      // AFFICHER LES DONNÉES ENVOYÉES POUR DÉBOGAGE
-      print("URL: $url");
-      print("BODY: $body");
-
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        }, 
         body: body,
       );
 
-      // AFFICHER LA RÉPONSE POUR DÉBOGAGE
-      print("STATUS CODE: ${response.statusCode}");
-      print("RESPONSE BODY: ${response.body}");
-
       // TRAITER LA RÉPONSE
       if (response.statusCode == 200) {
-        // Tenter de décoder le JSON
         try {
           final data = json.decode(response.body);
+
+          // SUCCÈS
           if (data["success"] == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -108,7 +143,18 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
             );
             // RECHARGER LES RÉSERVATIONS
             _fetchReservations();
-          } else {
+          } 
+          
+          // SESSION EXPIREE
+          else if (response.statusCode == 403) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+            );
+            Navigator.pushReplacementNamed(context, '/login_screen');
+          }
+
+          // AUTRES ERREURS
+          else {
             setState(() {
               _isLoading = false;
             });
@@ -158,7 +204,6 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         }
       }
     } catch (e) {
-      print("EXCEPTION: $e");
       setState(() {
         _isLoading = false;
       });

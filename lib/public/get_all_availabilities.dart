@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
+import '../auth/user_session_storage.dart';
+
+
 
 class GetAllAvailabilities extends StatefulWidget {
   @override
@@ -23,20 +26,49 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
 
   // RÉCUPÉRATION DES DISPONIBILITÉS
   Future<void> _fetchDisponibilites() async {
+
+    // RÉCUPÉRATION DU TOKEN
+    final token = UserSession.userToken;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token JWT non trouvé')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _creneaux = [];
     });
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
     final url = Uri.parse("${ApiConstants.baseUrl}user/GetAllAvailabilities?date=$dateStr");
+    
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // TOKEN JWT
+        },
+      );
+
+
       final data = json.decode(response.body);
       if (data["success"] == true) {
         setState(() {
           _creneaux = data["creneaux"];
         });
-      } else {
+      } 
+
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
+        );
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      
+      else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data["message"].toString().toUpperCase())),
         );
