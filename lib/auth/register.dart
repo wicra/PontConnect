@@ -241,13 +241,34 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
+
+                      // VALIDATION DU MOT DE PASSE
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Veuillez entrer un mot de passe';
                         }
+
+                        bool hasLowercase = value.contains(RegExp(r'[a-z]'));
+                        bool hasUppercase = value.contains(RegExp(r'[A-Z]'));
+                        bool hasDigit = value.contains(RegExp(r'[0-9]'));
+                        bool hasSpecialChar = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+                        
                         if (value.length < 12) {
-                          return 'Minimum 12 caractères';
+                          return 'Le mot de passe doit contenir au moins 12 caractères';
                         }
+                        if (!hasLowercase) {
+                          return 'Le mot de passe doit contenir au moins une lettre minuscule';
+                        }
+                        if (!hasUppercase) {
+                          return 'Le mot de passe doit contenir au moins une lettre majuscule';
+                        }
+                        if (!hasDigit) {
+                          return 'Le mot de passe doit contenir au moins un chiffre';
+                        }
+                        if (!hasSpecialChar && value.length < 14) {
+                          return 'Le mot de passe doit contenir au moins un caractère spécial ou avoir 14 caractères minimum';
+                        }
+                        
                         return null;
                       },
                     ),
