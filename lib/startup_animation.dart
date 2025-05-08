@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pontconnect/auth/login.dart';
+import 'package:pontconnect/auth/user_session_storage.dart'; // Ajout de cette ligne
 
 // CENTRALISATION COULEURS & API
 import 'package:pontconnect/constants.dart';
@@ -12,8 +13,8 @@ class StartupAnimation extends StatefulWidget {
   _StartupAnimation createState() => _StartupAnimation();
 }
 
-class _StartupAnimation extends State<StartupAnimation> with TickerProviderStateMixin {
-
+class _StartupAnimation extends State<StartupAnimation>
+    with TickerProviderStateMixin {
   // VARIABLES
   late AnimationController _scaleController;
   late AnimationController _slideController;
@@ -50,7 +51,8 @@ class _StartupAnimation extends State<StartupAnimation> with TickerProviderState
     );
 
     // ANIMATION DE DEPLACEMENT
-    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset(0, -1.5)).animate(
+    _slideAnimation =
+        Tween<Offset>(begin: Offset.zero, end: Offset(0, -1.5)).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
     );
 
@@ -61,7 +63,8 @@ class _StartupAnimation extends State<StartupAnimation> with TickerProviderState
     );
 
     // ANIMATION DE COULEUR
-    _colorAnimation = ColorTween(begin: backgroundLight, end: primaryColor).animate(
+    _colorAnimation =
+        ColorTween(begin: backgroundLight, end: primaryColor).animate(
       CurvedAnimation(parent: _colorController, curve: Curves.easeInOut),
     );
 
@@ -80,6 +83,21 @@ class _StartupAnimation extends State<StartupAnimation> with TickerProviderState
         MaterialPageRoute(builder: (_) => LoginPage()),
       );
     });
+
+    // ATTENDRE QUE L'ANIMATION SE TERMINE
+    Future.delayed(Duration(seconds: 3), () {
+      if (UserSession.userToken != null) {
+        // REDIRIGER SELON LE TYPE D'UTILISATEUR
+        if (UserSession.typeUserId == 1) {
+          Navigator.pushReplacementNamed(context, '/admin_page');
+        } else {
+          Navigator.pushReplacementNamed(context, '/user_page');
+        }
+      } else {
+        // NON CONNECTÉ
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+    });
   }
 
   @override
@@ -93,7 +111,6 @@ class _StartupAnimation extends State<StartupAnimation> with TickerProviderState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       // CORPS DE LA PAGE
       body: Container(
         decoration: const BoxDecoration(

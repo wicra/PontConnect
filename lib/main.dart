@@ -3,6 +3,7 @@ import 'package:pontconnect/auth/login.dart';
 import 'package:pontconnect/auth/register.dart';
 import 'package:pontconnect/public/user_main_view.dart';
 import 'package:pontconnect/startup_animation.dart';
+import 'package:pontconnect/auth/user_session_storage.dart'; // Ajout de cette ligne
 
 // CENTRALISATION COULEURS & API
 import 'package:pontconnect/constants.dart';
@@ -10,7 +11,13 @@ import 'package:pontconnect/constants.dart';
 import 'admin/admin_main_view.dart';
 
 // POINT D'ENTREE
-void main() {
+void main() async {
+  // INITIALISATION OBLIGATOIRE POUR FLUTTER
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // VERIFICATION SI SESSION EXISTE
+  await UserSession.loadSession();
+
   // LANCEMENT DE L'APPLICATION
   runApp(const MyApp());
 }
@@ -44,7 +51,6 @@ class MyApp extends StatelessWidget {
         '/startup_animation': (context) => StartupAnimation(),
         '/user_page': (context) => UserPage(),
         '/admin_page': (context) => AdminPage(),
-
       },
     );
   }
