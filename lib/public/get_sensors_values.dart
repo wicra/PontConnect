@@ -45,7 +45,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
     try {
       // APPEL API
-      final url = Uri.parse('${ApiConstants.baseUrl}user/GetSensorValues');
+      final url = Uri.parse('${ApiConstants.baseUrl}user/sensor-values');
       final response = await http.get(
         url,
         headers: {

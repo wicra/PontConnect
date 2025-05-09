@@ -50,7 +50,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     });
 
     // APPEL API
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserReservations?user_id=$userId");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations?user_id=$userId");
     
     try {
       final response = await http.get(
@@ -118,7 +118,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     }
 
     // PRÉPARATION REQUÊTE API
-    final url = Uri.parse("${ApiConstants.baseUrl}user/updateReservationStatus");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
 
     final body = json.encode({
       "reservation_id": reservationId,

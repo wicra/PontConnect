@@ -39,7 +39,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
       _errorMessage = "";
     });
 
-    final url = Uri.parse("${ApiConstants.baseUrl}admin/getPendingReservations");
+    final url = Uri.parse("${ApiConstants.baseUrl}admin/reservations/pending");
     try {
       final response = await http.get(
         url,
@@ -112,7 +112,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
       _isLoading = true;
     });
 
-    final url = Uri.parse("${ApiConstants.baseUrl}user/UpdateReservationStatus");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus,
@@ -231,7 +231,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
   }
 
   // FORMATAGE DE DATE (YYYY-MM-DD -> DD/MM/YYYY)
-  String _formatDate(String inputDate) {
+  String _formatDate(String? inputDate) {
     if (inputDate == null || inputDate.isEmpty) return "";
 
     try {

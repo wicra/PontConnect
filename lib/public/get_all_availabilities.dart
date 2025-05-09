@@ -41,7 +41,7 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       _creneaux = [];
     });
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final url = Uri.parse("${ApiConstants.baseUrl}user/GetAllAvailabilities?date=$dateStr");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/availabilities?date=$dateStr");
     
     try {
       final response = await http.get(

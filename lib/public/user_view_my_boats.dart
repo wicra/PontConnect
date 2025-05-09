@@ -50,7 +50,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     });
 
     // APPEL API
-    final url = Uri.parse("${ApiConstants.baseUrl}user/getUserBateaux?user_id=$userId");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/boats?user_id=$userId");
     
     try {
       final response = await http.get(
@@ -110,7 +110,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     if (userId == null) return;
     
     final url = Uri.parse(
-        "${ApiConstants.baseUrl}user/deleteBoat?bateau_id=$bateauId&user_id=$userId");
+        "${ApiConstants.baseUrl}user/boats/del?bateau_id=$bateauId&user_id=$userId");
     
     try {
       final response = await http.get(
@@ -346,7 +346,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
       return;
     }
     
-    final url = Uri.parse("${ApiConstants.baseUrl}user/addBoat");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/boats/add");
     final body = {
       "user_id": userId.toString(),
       "nom": nom,

@@ -45,7 +45,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     });
 
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetHorairesCreneaux');
+      final url = Uri.parse('${ApiConstants.baseUrl}admin/horaires-creneaux');
       final response = await http.get(
         url,
         headers: {
@@ -99,7 +99,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     }
 
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}admin/adminGetFormDataHorairesCreneaux');
+      final url = Uri.parse('${ApiConstants.baseUrl}admin//horaires-creneaux/form-data');
       final response = await http.get(
         url,
         headers: {
@@ -143,7 +143,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // AJOUT D'UN CRÉNEAU
   Future<void> _addCreneau(Map<String, dynamic> creneauData) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/adminAddHoraireCreneau',
+      url: '${ApiConstants.baseUrl}admin/horaires-creneaux/add',
       data: creneauData,
       successMessage: "CRÉNEAU AJOUTÉ AVEC SUCCÈS",
     );
@@ -152,7 +152,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // MISE À JOUR D'UN CRÉNEAU
   Future<void> _updateCreneau(Map<String, dynamic> creneauData) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/adminUpdateHoraireCreneau',
+      url: '${ApiConstants.baseUrl}admin//horaires-creneaux/update',
       data: creneauData,
       successMessage: "CRÉNEAU MIS À JOUR AVEC SUCCÈS",
     );
@@ -161,7 +161,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   // SUPPRESSION D'UN CRÉNEAU
   Future<void> _deleteCreneau(int creneauId) async {
     await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/adminDeleteHoraireCreneau',
+      url: '${ApiConstants.baseUrl}admin//horaires-creneaux/delete',
       data: {"horaires_id": creneauId},
       successMessage: "CRÉNEAU SUPPRIMÉ AVEC SUCCÈS",
     );
@@ -247,11 +247,11 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   }
 
   // AFFICHAGE DES MESSAGES DE SUCCÈS
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: primaryColor),
-    );
-  }
+  // void _showSuccessSnackBar(String message) {
+  //  ScaffoldMessenger.of(context).showSnackBar(
+  //    SnackBar(content: Text(message), backgroundColor: primaryColor),
+  //  );
+  //}
 
   // CONSTRUCTION DE LA CARTE D'UN CRÉNEAU
   Widget _buildCreneauCard(dynamic creneau) {
