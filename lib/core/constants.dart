@@ -20,8 +20,5 @@ const Color infoColor       = Color(0xFF29B6F6);
 
 // API REST URL CENTRALISATION
 class ApiConstants {
-  // static const String baseUrl = 'http://10.192.23.8:3000/api/';
-  // static const String baseUrl = 'http://192.168.1.35:3000/';
-  // ipconfig getifaddr en0 
-  static const String baseUrl = 'https://pontconnect-rest-node.onrender.com/api/';
+  static const String baseUrl = 'http://10.192.23.8:3000/api/';
 }
