@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:pontconnect/public/get_sensors_values.dart';
+import 'package:pontconnect/user/get_sensors_values.dart';
 import 'package:pontconnect/auth/user_session_storage.dart';
-import 'package:pontconnect/public/get_all_availabilities.dart';
+import 'package:pontconnect/user/get_all_availabilities.dart';
 import 'package:pontconnect/admin/admin_pending_reservations_management.dart';
 import 'package:pontconnect/admin/admin_schedules_management.dart';
-
-// IMPORT DES CONSTANTES (COULEURS & API)
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
 
 // PAGE PRINCIPALE DE L'ADMINISTRATEUR
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
+
   @override
   _AdminPageState createState() => _AdminPageState();
 }
@@ -26,12 +25,12 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundCream,
-      appBar: _buildAppBar(), // CONSTRUIRE L'APP BAR
+      appBar: _buildAppBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: _getBodyContent(), // CONSTRUIRE LE CONTENU DE LA PAGE
+        child: _getBodyContent(),
       ),
-      bottomNavigationBar: _buildBottomNavBar(), // CONSTRUIRE LA BOTTOM NAVIGATION BAR
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -41,8 +40,6 @@ class _AdminPageState extends State<AdminPage> {
       context: context,
       builder: (BuildContext context) {
         return Theme(
-
-          // THEME DE LA BOITE DE DIALOGUE
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
               primary: primaryColor,
@@ -51,11 +48,9 @@ class _AdminPageState extends State<AdminPage> {
             ),
             dialogBackgroundColor: backgroundLight,
             textTheme: ThemeData.light().textTheme.apply(
-              fontFamily: 'DarumadropOne',
-            ),
+                  fontFamily: 'DarumadropOne',
+                ),
           ),
-
-          // BOITE DE DIALOGUE DE DECONNEXION
           child: AlertDialog(
             title: const Text('DÉCONNEXION'),
             content: const Text('VOULIEZ-VOUS VRAIMENT VOUS DÉCONNECTER ?'),
@@ -70,7 +65,7 @@ class _AdminPageState extends State<AdminPage> {
                   UserSession.clear();
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     '/login_screen',
-                        (route) => false,
+                    (route) => false,
                   );
                 },
                 child: const Text('DÉCONNECTER'),
@@ -150,7 +145,6 @@ class _AdminPageState extends State<AdminPage> {
         ),
       );
     }
-
     // PAGE GESTION DES PONTS
     else if (_currentIndex == 3) {
       return ClipRRect(
@@ -188,7 +182,6 @@ class _AdminPageState extends State<AdminPage> {
         color: primaryColor,
       ),
       elevation: 8,
-      // GESTION DE LA DECONNEXION & CHANGEMENT D'ONGLET
       onTap: (index) {
         if (index == 4) {
           _logout();
@@ -198,7 +191,6 @@ class _AdminPageState extends State<AdminPage> {
           });
         }
       },
-      // ITEMS DE LA BOTTOM NAV BAR
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),

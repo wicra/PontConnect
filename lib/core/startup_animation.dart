@@ -5,7 +5,7 @@ import 'package:pontconnect/auth/login.dart';
 import 'package:pontconnect/auth/user_session_storage.dart'; // Ajout de cette ligne
 
 // CENTRALISATION COULEURS & API
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
 
 // PAGE DE DEMARRAGE ANIMATION
 class StartupAnimation extends StatefulWidget {

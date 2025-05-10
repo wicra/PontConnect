@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import '../constants.dart';
-import '../auth/user_session_storage.dart';
+import 'package:pontconnect/core/constants.dart';
+import 'package:pontconnect/auth/user_session_storage.dart';
+import 'package:pontconnect/core/notification_helper.dart';
 
-/// PAGE DE RÉSERVATION DES CRÉNEAUX POUR L'UTILISATEUR
+// PAGE DE RÉSERVATION DES CRÉNEAUX
 class UserAddReservation extends StatefulWidget {
   @override
   _UserAddReservationState createState() => _UserAddReservationState();
@@ -29,13 +30,10 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
   // RÉCUPÉRATION DES CRÉNEAUX DISPONIBLES
   Future<void> _fetchCreneaux() async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
@@ -52,7 +50,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -66,42 +64,33 @@ class _UserAddReservationState extends State<UserAddReservation> {
           }
           _isLoadingCreneaux = false;
         });
-      } 
-
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-      
-      else {
+      } else {
         setState(() {
           _isLoadingCreneaux = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR LORS DE LA RÉCUPÉRATION DES CRÉNEAUX")),
-        );
+        NotificationHelper.showError(
+            context, "ERREUR LORS DE LA RÉCUPÉRATION DES CRÉNEAUX");
       }
     } catch (e) {
       setState(() {
         _isLoadingCreneaux = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR: $e")));
+      NotificationHelper.showError(context, "ERREUR: $e");
     }
   }
 
   // RÉCUPÉRATION DES BATEAUX DE L'UTILISATEUR
   Future<void> _fetchBateaux() async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
@@ -114,8 +103,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
       setState(() {
         _isLoadingBateaux = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")));
+      NotificationHelper.showWarning(context, "UTILISATEUR NON CONNECTÉ");
       return;
     }
 
@@ -125,7 +113,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -135,47 +123,41 @@ class _UserAddReservationState extends State<UserAddReservation> {
           _bateaux = data["bateaux"] ?? [];
           _isLoadingBateaux = false;
         });
-      } 
-
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }   
-      
-      else {
+      } else {
         setState(() {
           _isLoadingBateaux = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR LORS DE LA RÉCUPÉRATION DES BATEAUX")),
-        );
+        NotificationHelper.showError(
+            context, "ERREUR LORS DE LA RÉCUPÉRATION DES BATEAUX");
       }
     } catch (e) {
       setState(() {
         _isLoadingBateaux = false;
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR: $e")));
+      NotificationHelper.showError(context, "ERREUR: $e");
     }
   }
 
   // VALIDATION ET ENVOI DE LA RÉSERVATION
   Future<void> _reserve() async {
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
-    if (_selectedCreneauId == null || _selectedDate == null || _selectedBateauId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("VEUILLEZ REMPLIR TOUS LES CHAMPS")));
+    if (_selectedCreneauId == null ||
+        _selectedDate == null ||
+        _selectedBateauId == null) {
+      NotificationHelper.showWarning(
+          context, "VEUILLEZ REMPLIR TOUS LES CHAMPS");
       return;
     }
 
@@ -185,9 +167,9 @@ class _UserAddReservationState extends State<UserAddReservation> {
       builder: (context) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Text("ENREGISTREMENT EN COURS...")
+            const CircularProgressIndicator(),
+            const SizedBox(width: 20),
+            const Text("ENREGISTREMENT EN COURS...")
           ],
         ),
       ),
@@ -196,8 +178,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
     final userId = UserSession.userId;
     if (userId == null) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")));
+      NotificationHelper.showWarning(context, "UTILISATEUR NON CONNECTÉ");
       return;
     }
 
@@ -210,19 +191,19 @@ class _UserAddReservationState extends State<UserAddReservation> {
     });
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // TOKEN JWT
-        }, 
-        body: body);
+      final response = await http.post(url,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: body);
 
       Navigator.pop(context);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonResponse = json.decode(response.body);
-        String message = jsonResponse is String ? jsonResponse : jsonResponse["message"];
+        String message =
+            jsonResponse is String ? jsonResponse : jsonResponse["message"];
 
         _fetchCreneaux();
 
@@ -230,46 +211,26 @@ class _UserAddReservationState extends State<UserAddReservation> {
           _selectedCreneauId = null;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message.toUpperCase()),
-              backgroundColor: primaryColor,
-            )
-        );
+        NotificationHelper.showSuccess(context, message.toUpperCase());
       }
-      
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-
-      else {
+      } else {
         final jsonResponse = json.decode(response.body);
-        String message = jsonResponse is String ? jsonResponse : jsonResponse["message"];
+        String message =
+            jsonResponse is String ? jsonResponse : jsonResponse["message"];
 
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("ERREUR: ${message.toUpperCase()}"),
-              backgroundColor: accentColor,
-            )
-        );
+        NotificationHelper.showError(
+            context, "ERREUR: ${message.toUpperCase()}");
       }
     } catch (e) {
       Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("ERREUR: $e"),
-            backgroundColor: accentColor,
-          )
-      );
+      NotificationHelper.showError(context, "ERREUR: $e");
     }
   }
-
-  // COMPOSANTS D'INTERFACE UTILISATEUR
 
   // DROPDOWN PERSONNALISÉ
   Widget _buildDropdownField<T>({
@@ -285,12 +246,17 @@ class _UserAddReservationState extends State<UserAddReservation> {
         DropdownButtonFormField<T>(
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(fontSize: 15, color: textSecondary, fontFamily: 'DarumadropOne'),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            labelStyle: const TextStyle(
+                fontSize: 15,
+                color: textSecondary,
+                fontFamily: 'DarumadropOne'),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+              borderSide:
+                  BorderSide(color: Theme.of(context).primaryColor, width: 2),
             ),
           ),
           items: isLoading ? [] : items,
@@ -298,13 +264,17 @@ class _UserAddReservationState extends State<UserAddReservation> {
           onChanged: isLoading ? null : onChanged,
           dropdownColor: backgroundLight,
           iconEnabledColor: textPrimary,
-          style: TextStyle(fontSize: 15, color: textPrimary, fontFamily: 'DarumadropOne'),
+          style: const TextStyle(
+              fontSize: 15, color: textPrimary, fontFamily: 'DarumadropOne'),
           hint: isLoading
-              ? Text("CHARGEMENT...", style: TextStyle(fontFamily: 'DarumadropOne'))
-              : hint ?? Text("SÉLECTIONNER", style: TextStyle(fontFamily: 'DarumadropOne')),
+              ? const Text("CHARGEMENT...",
+                  style: TextStyle(fontFamily: 'DarumadropOne'))
+              : hint ??
+                  const Text("SÉLECTIONNER",
+                      style: TextStyle(fontFamily: 'DarumadropOne')),
         ),
         if (isLoading)
-          Positioned(
+          const Positioned(
             right: 40,
             top: 15,
             child: SizedBox(
@@ -337,7 +307,9 @@ class _UserAddReservationState extends State<UserAddReservation> {
                   onSurface: textPrimary,
                 ),
                 dialogBackgroundColor: backgroundLight,
-                textTheme: ThemeData.light().textTheme.apply(fontFamily: 'DarumadropOne'),
+                textTheme: ThemeData.light()
+                    .textTheme
+                    .apply(fontFamily: 'DarumadropOne'),
               ),
               child: child!,
             );
@@ -354,12 +326,15 @@ class _UserAddReservationState extends State<UserAddReservation> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: "DATE",
-          labelStyle: TextStyle(fontSize: 15, color: textSecondary, fontFamily: 'DarumadropOne'),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          labelStyle: const TextStyle(
+              fontSize: 15, color: textSecondary, fontFamily: 'DarumadropOne'),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            borderSide:
+                BorderSide(color: Theme.of(context).primaryColor, width: 2),
           ),
         ),
         child: Row(
@@ -369,9 +344,12 @@ class _UserAddReservationState extends State<UserAddReservation> {
               _selectedDate == null
                   ? "CHOISIR LA DATE"
                   : DateFormat('yyyy-MM-dd').format(_selectedDate!),
-              style: TextStyle(fontSize: 15, color: textSecondary, fontFamily: 'DarumadropOne'),
+              style: const TextStyle(
+                  fontSize: 15,
+                  color: textSecondary,
+                  fontFamily: 'DarumadropOne'),
             ),
-            Icon(Icons.calendar_today, color: textSecondary),
+            const Icon(Icons.calendar_today, color: textSecondary),
           ],
         ),
       ),
@@ -406,7 +384,8 @@ class _UserAddReservationState extends State<UserAddReservation> {
               items: _bateaux.map((b) {
                 return DropdownMenuItem<int>(
                   value: b['bateau_id'],
-                  child: Text(b['nom'] ?? '', style: TextStyle(fontFamily: 'DarumadropOne')),
+                  child: Text(b['nom'] ?? '',
+                      style: const TextStyle(fontFamily: 'DarumadropOne')),
                 );
               }).toList(),
               value: _selectedBateauId,
@@ -417,23 +396,22 @@ class _UserAddReservationState extends State<UserAddReservation> {
               },
               isLoading: _isLoadingBateaux,
               hint: _bateaux.isEmpty && !_isLoadingBateaux
-                  ? Text("AUCUN BATEAU DISPONIBLE", style: TextStyle(fontFamily: 'DarumadropOne'))
+                  ? const Text("AUCUN BATEAU DISPONIBLE",
+                      style: TextStyle(fontFamily: 'DarumadropOne'))
                   : null,
             ),
-            const SizedBox(height: 16),
-
-            // SÉLECTION DE LA DATE
-            _buildDatePicker(),
             const SizedBox(height: 16),
 
             // SÉLECTION DU CRÉNEAU
             _buildDropdownField<int>(
               label: "CRÉNEAU",
               items: _creneaux.map((c) {
-                String displayLabel = "${c['periode']} - ${c['direction']} : ${c['heure_debut']} - ${c['heure_fin']}";
+                String displayLabel =
+                    "${c['periode']} - ${c['direction']} : ${c['heure_debut']} - ${c['heure_fin']}";
                 return DropdownMenuItem<int>(
                   value: c['creneau_id'],
-                  child: Text(displayLabel, style: TextStyle(fontFamily: 'DarumadropOne')),
+                  child: Text(displayLabel,
+                      style: const TextStyle(fontFamily: 'DarumadropOne')),
                 );
               }).toList(),
               value: _selectedCreneauId,
@@ -444,28 +422,48 @@ class _UserAddReservationState extends State<UserAddReservation> {
               },
               isLoading: _isLoadingCreneaux,
               hint: _creneaux.isEmpty && !_isLoadingCreneaux
-                  ? Text("SÉLECTIONNEZ UNE DATE", style: TextStyle(fontFamily: 'DarumadropOne'))
+                  ? const Text("SÉLECTIONNEZ UNE DATE",
+                      style: TextStyle(fontFamily: 'DarumadropOne'))
                   : null,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // BOUTON DE RÉSERVATION
-            ElevatedButton(
-              onPressed: _reserve,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: secondaryColor,
-              ),
-              child: Text(
-                "RÉSERVER",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'DarumadropOne',
-                  color: backgroundLight,
+            // DATE ET BOUTON
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // SÉLECTION DE LA DATE
+                Expanded(
+                  flex: 6,
+                  child: _buildDatePicker(),
                 ),
-              ),
+                const SizedBox(width: 12),
+
+                // BOUTON DE RÉSERVATION
+                Expanded(
+                  flex: 4,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _reserve,
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: secondaryColor,
+                      ),
+                      child: const Text(
+                        "RÉSERVER",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'DarumadropOne',
+                          color: backgroundLight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

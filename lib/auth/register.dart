@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 // CENTRALISATION COULEURS & API
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
 
 // PAGE D'INSCRIPTION
 class RegisterPage extends StatefulWidget {

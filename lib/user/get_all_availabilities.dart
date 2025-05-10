@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../constants.dart';
-import '../auth/user_session_storage.dart';
-
-
+import 'package:pontconnect/core/constants.dart';
+import 'package:pontconnect/auth/user_session_storage.dart';
+import 'package:pontconnect/core/notification_helper.dart';
 
 class GetAllAvailabilities extends StatefulWidget {
   @override
@@ -26,13 +25,10 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
 
   // RÉCUPÉRATION DES DISPONIBILITÉS
   Future<void> _fetchDisponibilites() async {
-
     // RÉCUPÉRATION DU TOKEN
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
 
@@ -41,8 +37,9 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       _creneaux = [];
     });
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final url = Uri.parse("${ApiConstants.baseUrl}user/availabilities?date=$dateStr");
-    
+    final url =
+        Uri.parse("${ApiConstants.baseUrl}user/availabilities?date=$dateStr");
+
     try {
       final response = await http.get(
         url,
@@ -52,30 +49,24 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
         },
       );
 
-
       final data = json.decode(response.body);
       if (data["success"] == true) {
         setState(() {
           _creneaux = data["creneaux"];
         });
-      } 
+      }
 
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-      
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"].toString().toUpperCase())),
-        );
+      } else {
+        NotificationHelper.showError(
+            context, data["message"].toString().toUpperCase());
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR: ${e.toString()}")));
+      NotificationHelper.showError(context, "ERREUR: ${e.toString()}");
     }
     setState(() {
       _isLoading = false;
@@ -98,7 +89,8 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
               onSurface: textPrimary,
             ),
             dialogBackgroundColor: backgroundLight,
-            textTheme: ThemeData.light().textTheme.apply(fontFamily: 'DarumadropOne'),
+            textTheme:
+                ThemeData.light().textTheme.apply(fontFamily: 'DarumadropOne'),
           ),
           child: child!,
         );
@@ -131,9 +123,7 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
         : (progress < 0.5 ? primaryColor : tertiaryColor);
 
     // INDICATEUR DE DISPONIBILITÉ
-    final String statusText = progress >= 1.0
-        ? "COMPLET"
-        : "DISPONIBLE";
+    final String statusText = progress >= 1.0 ? "COMPLET" : "DISPONIBLE";
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -142,7 +132,6 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () {
-          // Action au tap (facultatif - navigation vers détails)
         },
         child: Container(
           decoration: BoxDecoration(
@@ -195,7 +184,9 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            progress >= 1.0 ? Icons.do_not_disturb : Icons.check_circle_outline,
+                            progress >= 1.0
+                                ? Icons.do_not_disturb
+                                : Icons.check_circle_outline,
                             size: 14,
                             color: statusColor,
                           ),
@@ -232,7 +223,8 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
                           flex: 3,
                           child: Row(
                             children: [
-                              Icon(Icons.schedule, size: 16, color: statusColor),
+                              Icon(Icons.schedule,
+                                  size: 16, color: statusColor),
                               SizedBox(width: 4),
                               Text(
                                 heureDeb,
@@ -242,8 +234,10 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: Icon(Icons.arrow_forward, size: 14, color: textSecondary),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: Icon(Icons.arrow_forward,
+                                    size: 14, color: textSecondary),
                               ),
                               Text(
                                 heureFin,
@@ -258,11 +252,13 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
 
                         // CAPACITÉ
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: backgroundLight,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            border:
+                                Border.all(color: Colors.grey.withOpacity(0.3)),
                           ),
                           child: Text(
                             "$nbConfirm/$capacite",
@@ -327,7 +323,8 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
                 minHeight: 5,
                 backgroundColor: Colors.grey.withOpacity(0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(10)),
               ),
             ],
           ),
@@ -356,7 +353,10 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
         backgroundColor: primaryColor,
         title: const Text(
           'DISPONIBILITÉS',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: backgroundLight),
+          style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              color: backgroundLight),
         ),
       ),
       backgroundColor: backgroundLight,
@@ -373,9 +373,12 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
                     child: InputDecorator(
                       decoration: InputDecoration(
                         labelText: "DATE",
-                        labelStyle: TextStyle(fontSize: 15, color: textSecondary),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        labelStyle:
+                            TextStyle(fontSize: 15, color: textSecondary),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
                         DateFormat('yyyy-MM-dd').format(_selectedDate),
@@ -391,47 +394,53 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
             // AFFICHAGE DES CRÉNEAUX
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator(color: primaryColor))
-                  : (_creneaux.isEmpty
                   ? Center(
-                child: Text("AUCUN CRÉNEAU TROUVÉ", style: TextStyle(fontSize: 16, color: textPrimary)),
-              )
-                  : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // SECTION SORTIE
-                    if (sorties.isNotEmpty) ...[
-                      Image.asset(
-                        'assets/images/direction_sortie.webp',
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      ),
-                      const SizedBox(height: 8),
-                      Column(
-                        children: sorties.map((c) => _buildCreneauCard(c)).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                      child: CircularProgressIndicator(color: primaryColor))
+                  : (_creneaux.isEmpty
+                      ? Center(
+                          child: Text("AUCUN CRÉNEAU TROUVÉ",
+                              style:
+                                  TextStyle(fontSize: 16, color: textPrimary)),
+                        )
+                      : SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // SECTION SORTIE
+                              if (sorties.isNotEmpty) ...[
+                                Image.asset(
+                                  'assets/images/direction_sortie.webp',
+                                  width: double.infinity,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                ),
+                                const SizedBox(height: 8),
+                                Column(
+                                  children: sorties
+                                      .map((c) => _buildCreneauCard(c))
+                                      .toList(),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
 
-                    // SECTION ENTRÉE
-                    if (entrees.isNotEmpty) ...[
-                      Image.asset(
-                        'assets/images/direction_entre.webp',
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      ),
-                      const SizedBox(height: 8),
-                      Column(
-                        children: entrees.map((c) => _buildCreneauCard(c)).toList(),
-                      ),
-                    ],
-                  ],
-                ),
-              )
-              ),
+                              // SECTION ENTRÉE
+                              if (entrees.isNotEmpty) ...[
+                                Image.asset(
+                                  'assets/images/direction_entre.webp',
+                                  width: double.infinity,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                ),
+                                const SizedBox(height: 8),
+                                Column(
+                                  children: entrees
+                                      .map((c) => _buildCreneauCard(c))
+                                      .toList(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        )),
             ),
           ],
         ),

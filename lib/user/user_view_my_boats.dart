@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:pontconnect/auth/user_session_storage.dart';
-
-// IMPORT DES CONSTANTES (API & COULEURS)
-import 'package:pontconnect/constants.dart';
+import '../auth/user_session_storage.dart';
+import '../core/constants.dart';
+import '../core/notification_helper.dart';
 
 // PAGE DES BATEAUX DE L'UTILISATEUR
 class ViewUserBateaux extends StatefulWidget {
@@ -26,69 +25,57 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
 
   // RÉCUPÉRATION DES BATEAUX DE L'UTILISATEUR
   Future<void> _fetchBateaux() async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
-    
-    final int? userId = UserSession.userId;
 
+    final int? userId = UserSession.userId;
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")),
-      );
+      NotificationHelper.showWarning(context, "UTILISATEUR NON CONNECTÉ");
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
 
     // APPEL API
     final url = Uri.parse("${ApiConstants.baseUrl}user/boats?user_id=$userId");
-    
+
     try {
       final response = await http.get(
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
       final data = json.decode(response.body);
-      
+
       // SUCCÈS
       if (data["success"] == true && data["bateaux"] != null) {
         setState(() {
           _bateaux = data["bateaux"];
         });
-      } 
-      
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
       }
-
-      // AUTRES ERREUR
+      // AUTRES ERREURS
       else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR LORS DE LA RÉCUPÉRATION DES BATEAUX")),
-        );
+        NotificationHelper.showError(
+            context, "ERREUR LORS DE LA RÉCUPÉRATION DES BATEAUX");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("ERREUR : ${e.toString()}")),
-      );
+      NotificationHelper.showError(context, "ERREUR : ${e.toString()}");
     }
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -96,54 +83,45 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
 
   // SUPPRESSION D'UN BATEAU
   Future<void> _deleteBateau(int bateauId) async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
     final int? userId = UserSession.userId;
     if (userId == null) return;
-    
+
     final url = Uri.parse(
         "${ApiConstants.baseUrl}user/boats/del?bateau_id=$bateauId&user_id=$userId");
-    
+
     try {
       final response = await http.get(
-          url,
-          headers: {
-            "Content-Type": "application/json",
-            'Authorization': 'Bearer $token', // TOKEN JWT
-          },
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token',
+        },
       );
 
       final data = json.decode(response.body);
-      
+
       // SUPPRESSION DU BATEAU RÉUSSIE
       if (data["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("BATEAU SUPPRIMÉ AVEC SUCCÈS")));
+        NotificationHelper.showSuccess(context, "BATEAU SUPPRIMÉ AVEC SUCCÈS");
         _fetchBateaux();
-      } 
-
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-      
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("ERREUR : ${data["message"]}")));
+      } else {
+        NotificationHelper.showError(context, "ERREUR : ${data["message"]}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR : ${e.toString()}")));
+      NotificationHelper.showError(context, "ERREUR : ${e.toString()}");
     }
   }
 
@@ -154,32 +132,33 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: backgroundLight,
-          title: Text("SUPPRIMER LE BATEAU"),
-          content: Text("LA SUPPRESSION DE \"$bateauName\" SUPPRIMERA VOS RÉSERVATIONS LIÉES À CE BATEAU ?"),
+          title: const Text("SUPPRIMER LE BATEAU"),
+          content: Text(
+              "LA SUPPRESSION DE \"$bateauName\" SUPPRIMERA VOS RÉSERVATIONS LIÉES À CE BATEAU ?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text("ANNULER"),
+              child: const Text("ANNULER"),
             ),
             TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _deleteBateau(bateauId);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: secondaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  "SUPPRIMER",
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: backgroundLight,
-                      fontFamily: 'DarumadropOne'),
-                )
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteBateau(bateauId);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: backgroundLight,
+                backgroundColor: secondaryColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text(
+                "SUPPRIMER",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: backgroundLight,
+                    fontFamily: 'DarumadropOne'),
+              ),
             ),
           ],
         );
@@ -192,14 +171,14 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     String nom = "";
     String immatriculation = "";
     String hauteur = "";
-    
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: backgroundLight,
-          title: Text("AJOUTER UN BATEAU"),
-          content: Container(
+          title: const Text("AJOUTER UN BATEAU"),
+          content: SizedBox(
             width: 450,
             child: SingleChildScrollView(
               child: Column(
@@ -208,95 +187,98 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Nom du bateau",
-                      labelStyle: TextStyle(
+                      labelStyle: const TextStyle(
                         fontSize: 16,
                         color: textSecondary,
                         fontFamily: 'DarumadropOne',
                       ),
-                      floatingLabelStyle: TextStyle(
+                      floatingLabelStyle: const TextStyle(
                         color: primaryColor,
                         fontFamily: 'DarumadropOne',
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                          borderRadius: BorderRadius.circular(10)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: backgroundCream),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: primaryColor, width: 2),
+                        borderSide:
+                            const BorderSide(color: primaryColor, width: 2),
                       ),
                       filled: true,
                       fillColor: backgroundLight,
-                      prefixIcon: Icon(Icons.directions_boat, color: primaryColor),
+                      prefixIcon: const Icon(Icons.directions_boat,
+                          color: primaryColor),
                     ),
                     onChanged: (value) => nom = value,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // CHAMP IMMATRICULATION
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Immatriculation",
-                      labelStyle: TextStyle(
+                      labelStyle: const TextStyle(
                         fontSize: 16,
                         color: textSecondary,
                         fontFamily: 'DarumadropOne',
                       ),
-                      floatingLabelStyle: TextStyle(
+                      floatingLabelStyle: const TextStyle(
                         color: primaryColor,
                         fontFamily: 'DarumadropOne',
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                          borderRadius: BorderRadius.circular(10)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: backgroundCream),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: primaryColor, width: 2),
+                        borderSide:
+                            const BorderSide(color: primaryColor, width: 2),
                       ),
                       filled: true,
                       fillColor: backgroundLight,
-                      prefixIcon: Icon(Icons.email, color: primaryColor),
+                      prefixIcon: const Icon(Icons.email, color: primaryColor),
                     ),
                     onChanged: (value) => immatriculation = value,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // CHAMP HAUTEUR
                   TextField(
                     decoration: InputDecoration(
                       labelText: "Hauteur (en mètres)",
-                      labelStyle: TextStyle(
+                      labelStyle: const TextStyle(
                         fontSize: 16,
                         color: textSecondary,
                         fontFamily: 'DarumadropOne',
                       ),
-                      floatingLabelStyle: TextStyle(
+                      floatingLabelStyle: const TextStyle(
                         color: primaryColor,
                         fontFamily: 'DarumadropOne',
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                          borderRadius: BorderRadius.circular(10)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: backgroundCream),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: primaryColor, width: 2),
+                        borderSide:
+                            const BorderSide(color: primaryColor, width: 2),
                       ),
                       filled: true,
                       fillColor: backgroundLight,
-                      prefixIcon: Icon(Icons.straighten, color: primaryColor),
+                      prefixIcon:
+                          const Icon(Icons.straighten, color: primaryColor),
                     ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (value) => hauteur = value,
                   ),
                 ],
@@ -305,24 +287,36 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text("ANNULER",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: textPrimary, fontFamily: 'DarumadropOne'),
-                )),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "ANNULER",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: textPrimary,
+                    fontFamily: 'DarumadropOne'),
+              ),
+            ),
             TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _addBateau(nom, immatriculation, hauteur);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: secondaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text("AJOUTER",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: backgroundLight, fontFamily: 'DarumadropOne'),
-                )),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _addBateau(nom, immatriculation, hauteur);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: backgroundLight,
+                backgroundColor: secondaryColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text(
+                "AJOUTER",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: backgroundLight,
+                    fontFamily: 'DarumadropOne'),
+              ),
+            ),
           ],
         );
       },
@@ -330,14 +324,12 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
   }
 
   // AJOUT D'UN NOUVEAU BATEAU
-  Future<void> _addBateau(String nom, String immatriculation, String hauteur) async {
-    
-    // RECUPERATION DU TOKEN JWT
+  Future<void> _addBateau(
+      String nom, String immatriculation, String hauteur) async {
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
@@ -345,7 +337,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     if (userId == null) {
       return;
     }
-    
+
     final url = Uri.parse("${ApiConstants.baseUrl}user/boats/add");
     final body = {
       "user_id": userId.toString(),
@@ -353,43 +345,33 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
       "immatriculation": immatriculation,
       "hauteur_max": hauteur
     };
-    
+
     try {
-      final response = await http.post(
-          url,
+      final response = await http.post(url,
           headers: {
             "Content-Type": "application/json",
-            'Authorization': 'Bearer $token', // TOKEN JWT
+            'Authorization': 'Bearer $token',
           },
-          body: json.encode(body)
-      );
+          body: json.encode(body));
 
       final data = json.decode(response.body);
 
       // AJOUT DU BATEAU RÉUSSI
       if (data["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("BATEAU AJOUTÉ AVEC SUCCÈS"))
-        );
-        await _fetchBateaux(); // ACTUALISATION
-      } 
-
+        NotificationHelper.showSuccess(context, "BATEAU AJOUTÉ AVEC SUCCÈS");
+        await _fetchBateaux();
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-      
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("ERREUR: ${data["message"] ?? "Une erreur est survenue"}"))
-        );
+      } else {
+        NotificationHelper.showError(
+            context, "ERREUR: ${data["message"] ?? "Une erreur est survenue"}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR: ${e.toString()}")));
+      NotificationHelper.showError(context, "ERREUR: ${e.toString()}");
     }
   }
 
@@ -400,18 +382,21 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     final String immatriculation = bateau['immatriculation'] ?? "";
 
     String dateText = "-";
-    if (bateau['created_at'] != null && bateau['created_at'].toString().isNotEmpty) {
+    if (bateau['created_at'] != null &&
+        bateau['created_at'].toString().isNotEmpty) {
       try {
-        dateText = DateFormat('dd/MM/yyyy').format(DateTime.parse(bateau['created_at']));
+        dateText = DateFormat('dd/MM/yyyy')
+            .format(DateTime.parse(bateau['created_at']));
       } catch (e) {
         dateText = "-";
       }
     }
-    final double hauteur = double.tryParse(bateau['hauteur_max']?.toString() ?? "0") ?? 0.0;
+    final double hauteur =
+        double.tryParse(bateau['hauteur_max']?.toString() ?? "0") ?? 0.0;
 
     return Card(
       color: backgroundCard,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -420,32 +405,33 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
           children: [
             Icon(Icons.directions_boat,
                 size: 40, color: Theme.of(context).primaryColor),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     libelleBateau,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text("IMMATRICUL : $immatriculation",
-                      style: TextStyle(fontSize: 14, color: textPrimary)),
-                  SizedBox(height: 4),
+                      style: const TextStyle(fontSize: 14, color: textPrimary)),
+                  const SizedBox(height: 4),
                   Text("HAUTEUR : ${hauteur.toStringAsFixed(2)} M",
-                      style: TextStyle(fontSize: 14, color: textPrimary)),
-                  SizedBox(height: 4),
+                      style: const TextStyle(fontSize: 14, color: textPrimary)),
+                  const SizedBox(height: 4),
                   Text("AJOUTÉ LE : $dateText",
-                      style: TextStyle(fontSize: 12, color: textSecondary)),
+                      style:
+                          const TextStyle(fontSize: 12, color: textSecondary)),
                 ],
               ),
             ),
             IconButton(
-              icon: Icon(Icons.delete, color: accentColor),
+              icon: const Icon(Icons.delete, color: accentColor),
               onPressed: () => _showDeleteConfirmation(bateauId, libelleBateau),
             ),
           ],
@@ -471,20 +457,21 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
           ),
         ),
       ),
-      
+
       // CONTENU PRINCIPAL
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _bateaux.isEmpty
-              ? Center(child: Text("AUCUN BATEAU ENREGISTRÉ"))
+              ? const Center(child: Text("AUCUN BATEAU ENREGISTRÉ"))
               : RefreshIndicator(
                   onRefresh: _fetchBateaux,
                   child: ListView.builder(
                     itemCount: _bateaux.length,
-                    itemBuilder: (context, index) => _buildBateauCard(_bateaux[index]),
+                    itemBuilder: (context, index) =>
+                        _buildBateauCard(_bateaux[index]),
                   ),
                 ),
-      
+
       // BOUTON D'AJOUT
       floatingActionButton: FloatingActionButton(
         backgroundColor: primaryColor,

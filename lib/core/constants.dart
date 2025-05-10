@@ -12,8 +12,16 @@ const Color textSecondary   = Color(0xFF757575);
 const Color accentColor2    = Color(0xFF6C7AA1);
 const Color backgroundCard  = Color(0xFFedf2fb);
 
+// COULEURS POUR LES MESSAGES
+const Color successColor    = Color(0xFF4CAF50); 
+const Color errorColor      = Color(0xFFE53935);
+const Color warningColor    = Color(0xFFFFA726);
+const Color infoColor       = Color(0xFF29B6F6);
 
 // API REST URL CENTRALISATION
 class ApiConstants {
-  static const String baseUrl = 'http://10.192.23.8:3000/';
+  // static const String baseUrl = 'http://10.192.23.8:3000/api/';
+  // static const String baseUrl = 'http://192.168.1.35:3000/';
+  // ipconfig getifaddr en0 
+  static const String baseUrl = 'https://pontconnect-rest-node.onrender.com/api/';
 }

@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pontconnect/auth/user_session_storage.dart';
-import 'package:pontconnect/public/user_add_new_reservation.dart';
-import 'package:pontconnect/public/user_view_my_reservations.dart';
-import 'package:pontconnect/public/get_all_availabilities.dart';
-import 'package:pontconnect/public/user_view_my_boats.dart';
-import 'package:pontconnect/public/user_help.dart';
-import 'package:pontconnect/public/get_sensors_values.dart';
-
-// CENTRALISATION COULEURS & API
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/user/user_add_new_reservation.dart';
+import 'package:pontconnect/user/user_view_my_reservations.dart';
+import 'package:pontconnect/user/get_all_availabilities.dart';
+import 'package:pontconnect/user/user_view_my_boats.dart';
+import 'package:pontconnect/user/user_rgpd.dart';
+import 'package:pontconnect/user/get_sensors_values.dart';
+import 'package:pontconnect/core/constants.dart';
 
 // PAGE UTILISATEUR
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
+
   @override
   _UserPageState createState() => _UserPageState();
 }
 
 // ETAT DE LA PAGE
 class _UserPageState extends State<UserPage> {
-
-  // RECUPERER LE NOM DE L'UTILISATEUR
+  // VARIABLES D'ÉTAT
   final String userName = UserSession.userName ?? "USER";
   int _currentIndex = 0;
 
@@ -45,7 +43,6 @@ class _UserPageState extends State<UserPage> {
       context: context,
       builder: (BuildContext context) {
         return Theme(
-
           // THEME DE LA BOITE DE DIALOGUE
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
@@ -55,18 +52,18 @@ class _UserPageState extends State<UserPage> {
             ),
             dialogBackgroundColor: backgroundLight,
             textTheme: ThemeData.light().textTheme.apply(
-              fontFamily: 'DarumadropOne',
-            ),
+                  fontFamily: 'DarumadropOne',
+                ),
           ),
 
           // BOITE DE DIALOGUE
           child: AlertDialog(
-            title: const Text('Déconnexion'),
-            content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+            title: const Text('DÉCONNEXION'),
+            content: const Text('VOULEZ-VOUS VRAIMENT VOUS DÉCONNECTER ?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annuler'),
+                child: const Text('ANNULER'),
               ),
               TextButton(
                 onPressed: () {
@@ -74,10 +71,10 @@ class _UserPageState extends State<UserPage> {
                   UserSession.clear();
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     '/login_screen',
-                        (route) => false,
+                    (route) => false,
                   );
                 },
-                child: const Text('Déconnecter'),
+                child: const Text('DÉCONNECTER'),
               ),
             ],
           ),
@@ -103,7 +100,7 @@ class _UserPageState extends State<UserPage> {
           const SizedBox(width: 8),
           Text(
             ("| $userName").toUpperCase(),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 25,
               fontWeight: FontWeight.bold,
               color: backgroundLight,
@@ -117,22 +114,19 @@ class _UserPageState extends State<UserPage> {
 
   // CONSTRUIRE LE CONTENU DU BODY
   Widget _getBodyContent() {
-
     // PREMIER ONGLET
     if (_currentIndex == 0) {
       return Column(
         children: [
-
           // SECTION HAUTE
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Container(
               color: backgroundLight,
-              height: 300,
+              height: 250,
               child: const GetSensorsValues(),
             ),
           ),
-
           const SizedBox(height: 16),
           // SECTION BASSE
           Expanded(
@@ -140,7 +134,7 @@ class _UserPageState extends State<UserPage> {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 color: backgroundLight,
-                child:  GetAllAvailabilities(),
+                child: GetAllAvailabilities(),
               ),
             ),
           ),
@@ -152,14 +146,13 @@ class _UserPageState extends State<UserPage> {
     else if (_currentIndex == 1) {
       return Column(
         children: [
-
           // SECTION HAUTE
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Container(
               color: backgroundLight,
-              height: 400,
-              child:  UserAddReservation(),
+              height: 380,
+              child: UserAddReservation(),
             ),
           ),
           const SizedBox(height: 16),
@@ -170,7 +163,7 @@ class _UserPageState extends State<UserPage> {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 color: backgroundLight,
-                child:  ViewMyReservations(),
+                child: ViewMyReservations(),
               ),
             ),
           ),
@@ -184,18 +177,18 @@ class _UserPageState extends State<UserPage> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           color: backgroundLight,
-          child:  ViewUserBateaux(),
+          child: ViewUserBateaux(),
         ),
       );
     }
 
-    // QUA ONGLET
+    // QUATIEME ONGLET
     else if (_currentIndex == 3) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Container(
           color: backgroundLight,
-          child: const  HelpPage(),
+          child: const HelpPage(),
         ),
       );
     }
@@ -260,7 +253,6 @@ class _UserPageState extends State<UserPage> {
           icon: Icon(Icons.logout),
           label: 'Déco',
         ),
-
       ],
     );
   }

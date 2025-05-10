@@ -5,7 +5,7 @@ import 'package:pontconnect/auth/user_session_storage.dart';
 import 'dart:convert';
 
 // CENTRALISATION COULEURS & API
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
 
 // PAGE DE CONNEXION
 class LoginPage extends StatefulWidget {

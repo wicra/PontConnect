@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:pontconnect/constants.dart';
-import '../auth/user_session_storage.dart';
+import 'package:pontconnect/core/constants.dart';
+import 'package:pontconnect/auth/user_session_storage.dart';
+import 'package:pontconnect/core/notification_helper.dart';
 
 class GetSensorsValues extends StatefulWidget {
   const GetSensorsValues({Key? key}) : super(key: key);
@@ -32,16 +33,12 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
   // RÉCUPÉRATION DES DONNÉES CAPTEURS
   Future<void> _fetchCapteurs({bool silent = false}) async {
-
     // RÉCUPÉRATION DU TOKEN
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
-
 
     try {
       // APPEL API
@@ -74,30 +71,27 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
         if (hasOutdatedData && !_hasShownOutdatedWarning) {
           _hasShownOutdatedWarning = true;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("DONNÉES NON À JOUR DEPUIS PLUS DE 4 HEURES")),
-          );
+          NotificationHelper.showWarning(
+              context, "DONNÉES NON À JOUR DEPUIS PLUS DE 4 HEURES");
         }
-      } 
+      }
 
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-
-      else if (!silent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((data['message'] ?? "ERREUR DE RÉCUPÉRATION").toString().toUpperCase())),
-        );
+      } else if (!silent) {
+        NotificationHelper.showError(
+            context,
+            (data['message'] ?? "ERREUR DE RÉCUPÉRATION")
+                .toString()
+                .toUpperCase());
       }
     } catch (e) {
       if (!silent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ERREUR: ${e.toString().toUpperCase()}")),
-        );
+        NotificationHelper.showError(
+            context, "ERREUR: ${e.toString().toUpperCase()}");
       }
     }
   }
@@ -314,7 +308,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         _capteurs.length,
-            (index) => Container(
+        (index) => Container(
           width: 6,
           height: 6,
           margin: EdgeInsets.symmetric(horizontal: 3),
@@ -332,9 +326,12 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   // CONSTRUCTION DE L'INTERFACE
   @override
   Widget build(BuildContext context) {
-    String currentPontName = _capteurs.isNotEmpty && _currentPage < _capteurs.length
-        ? (_capteurs[_currentPage]['LIBELLE_PONT'] ?? "INCONNU").toString().toUpperCase()
-        : "CAPTEURS ACTIFS";
+    String currentPontName =
+        _capteurs.isNotEmpty && _currentPage < _capteurs.length
+            ? (_capteurs[_currentPage]['LIBELLE_PONT'] ?? "INCONNU")
+                .toString()
+                .toUpperCase()
+            : "CAPTEURS ACTIFS";
 
     return Scaffold(
       appBar: AppBar(
@@ -359,64 +356,64 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
       backgroundColor: backgroundLight,
       body: _capteurs.isEmpty
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: primaryColor),
-            const SizedBox(height: 16),
-            Text(
-              "CHARGEMENT DES DONNÉES...",
-              style: TextStyle(
-                fontSize: 16,
-                color: textSecondary,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: primaryColor),
+                  const SizedBox(height: 16),
+                  Text(
+                    "CHARGEMENT DES DONNÉES...",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      )
+            )
           : Column(
-        children: [
-          // CAROUSEL DE CAPTEURS
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _capteurs.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                return Center(
-                  child: _buildCapteurCard(_capteurs[index]),
-                );
-              },
-            ),
-          ),
-
-          // INDICATEURS DE PAGE ET INSTRUCTION DE GLISSEMENT COMBINÉS
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.swipe, color: textSecondary, size: 12),
-                const SizedBox(width: 4),
-                Text(
-                  "${_currentPage + 1}/${_capteurs.length}",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: textSecondary,
+                // CAROUSEL DE CAPTEURS
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _capteurs.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return Center(
+                        child: _buildCapteurCard(_capteurs[index]),
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
-                _buildPageIndicator(),
+
+                // INDICATEURS DE PAGE ET INSTRUCTION DE GLISSEMENT COMBINÉS
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.swipe, color: textSecondary, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${_currentPage + 1}/${_capteurs.length}",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPageIndicator(),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

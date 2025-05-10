@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../constants.dart';
-import 'package:pontconnect/auth/user_session_storage.dart';
+import '../core/constants.dart';
+import '../auth/user_session_storage.dart';
+import '../core/notification_helper.dart';
 
 // GESTION DES CRÉNEAUX HORAIRES ADMIN
 class AdminCreneauManagement extends StatefulWidget {
@@ -30,13 +31,9 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // RÉCUPÉRATION DES CRÉNEAUX
   Future<void> _fetchCreneaux() async {
-    
-    // RECUPERATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
 
@@ -50,7 +47,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -62,23 +59,21 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
             _creneaux = data['creneaux'];
           });
         } else {
-          _showErrorSnackBar(data['message'] ?? "ERREUR LORS DE LA RÉCUPÉRATION DES CRÉNEAUX");
+          NotificationHelper.showError(context,
+              data['message'] ?? "ERREUR LORS DE LA RÉCUPÉRATION DES CRÉNEAUX");
         }
-      } 
-      
-      // SESSION EXPIREE
-      else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
-        Navigator.pushReplacementNamed(context, '/login_screen');
       }
 
-      else {
-        _showErrorSnackBar("ERREUR ${response.statusCode}");
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      } else {
+        NotificationHelper.showError(context, "ERREUR ${response.statusCode}");
       }
     } catch (e) {
-      _showErrorSnackBar("ERREUR: $e");
+      NotificationHelper.showError(context, "ERREUR: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -88,23 +83,20 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // RÉCUPÉRATION DES DONNÉES POUR LES FORMULAIRES
   Future<void> _fetchFormData() async {
-
-    // RECUPERATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
 
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}admin//horaires-creneaux/form-data');
+      final url = Uri.parse(
+          '${ApiConstants.baseUrl}admin//horaires-creneaux/form-data');
       final response = await http.get(
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -119,24 +111,26 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
             _isFormDataLoaded = true;
           });
         } else {
-          _showErrorSnackBar(data['message'] ?? "ERREUR LORS DE LA RÉCUPÉRATION DES DONNÉES DE FORMULAIRE");
+          NotificationHelper.showError(
+              context,
+              data['message'] ??
+                  "ERREUR LORS DE LA RÉCUPÉRATION DES DONNÉES DE FORMULAIRE");
         }
       }
-      
+
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
       }
 
       // AUTRES ERREURS
       else {
-        _showErrorSnackBar("ERREUR ${response.statusCode}");
+        NotificationHelper.showError(context, "ERREUR ${response.statusCode}");
       }
     } catch (e) {
-      _showErrorSnackBar("ERREUR: $e");
+      NotificationHelper.showError(context, "ERREUR: $e");
     }
   }
 
@@ -168,14 +162,14 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   }
 
   // MÉTHODE GÉNÉRIQUE POUR LES REQUÊTES POST
-  Future<void> _postRequest({ required String url, required Map<String, dynamic> data, required String successMessage,}) async {
-
-    // RECUPERATION DU TOKEN JWT
+  Future<void> _postRequest({
+    required String url,
+    required Map<String, dynamic> data,
+    required String successMessage,
+  }) async {
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
 
@@ -184,14 +178,14 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     setState(() {
       _isLoading = true;
     });
+
     try {
       final uri = Uri.parse(url);
-
       final response = await http.post(
         uri,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
         body: json.encode(data),
       );
@@ -202,36 +196,35 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         try {
           final respData = json.decode(response.body);
           if (respData['success'] == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(successMessage), backgroundColor: primaryColor),
-            );
-            
-            await Future.delayed(Duration(milliseconds: 100));
+            NotificationHelper.showSuccess(context, successMessage);
+
+            await Future.delayed(const Duration(milliseconds: 100));
             if (mounted) {
               await _fetchCreneaux();
             }
           } else {
-            _showErrorSnackBar(respData['message'] ?? "ERREUR LORS DE L'OPÉRATION");
+            NotificationHelper.showError(
+                context, respData['message'] ?? "ERREUR LORS DE L'OPÉRATION");
           }
         } catch (e) {
-          _showErrorSnackBar("ERREUR DE DÉCODAGE JSON: $e");
+          NotificationHelper.showError(context, "ERREUR DE DÉCODAGE JSON: $e");
         }
-      } 
-      
+      }
+
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
       }
 
       // AUTRES ERREURS
       else {
-        _showErrorSnackBar("ERREUR HTTP ${response.statusCode}");
+        NotificationHelper.showError(
+            context, "ERREUR HTTP ${response.statusCode}");
       }
     } catch (e) {
-      _showErrorSnackBar("ERREUR: $e");
+      NotificationHelper.showError(context, "ERREUR: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -241,31 +234,25 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // AFFICHAGE DES MESSAGES D'ERREUR
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: accentColor),
-    );
+    NotificationHelper.showError(context, message);
   }
-
-  // AFFICHAGE DES MESSAGES DE SUCCÈS
-  // void _showSuccessSnackBar(String message) {
-  //  ScaffoldMessenger.of(context).showSnackBar(
-  //    SnackBar(content: Text(message), backgroundColor: primaryColor),
-  //  );
-  //}
 
   // CONSTRUCTION DE LA CARTE D'UN CRÉNEAU
   Widget _buildCreneauCard(dynamic creneau) {
     // DONNÉES DU CRÉNEAU
     final int creneauId = int.parse(creneau['HORAIRES_ID']?.toString() ?? '0');
     final String periodeName = creneau['LIBELLE_PERIODE'] ?? "PÉRIODE INCONNUE";
-    final String directionName = creneau['DIRECTION_TRAJET'] ?? creneau['LIBELLE_DIRECTION_CRENEAU'] ?? "DIRECTION INCONNUE";
+    final String directionName = creneau['DIRECTION_TRAJET'] ??
+        creneau['LIBELLE_DIRECTION_CRENEAU'] ??
+        "DIRECTION INCONNUE";
     final String departTime = creneau['HORAIRE_DEPART'] ?? "--:--";
     final String passage1Time = creneau['HORAIRE_PASSAGE1'] ?? "--:--";
     final String passage2Time = creneau['HORAIRE_PASSAGE2'] ?? "--:--";
     final String passage3Time = creneau['HORAIRE_PASSAGE3'] ?? "--:--";
 
     // DÉTERMINATION DU TYPE DE DIRECTION
-    final int directionId = int.tryParse(creneau['DIRECTION_CRENEAU_ID']?.toString() ?? '0') ?? 0;
+    final int directionId =
+        int.tryParse(creneau['DIRECTION_CRENEAU_ID']?.toString() ?? '0') ?? 0;
 
     // DÉFINITION DES ATTRIBUTS SELON LA DIRECTION
     IconData directionIcon;
@@ -283,7 +270,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
       case 2:
         directionIcon = Icons.login;
         directionLabel = "ENTRÉE";
-        directionColor = secondaryColor ;
+        directionColor = secondaryColor;
         imagePath = 'assets/images/entre.webp';
         break;
       default:
@@ -308,7 +295,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: backgroundLight,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -322,7 +310,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   },
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: directionColor.withOpacity(0.1),
                       shape: BoxShape.circle,
@@ -358,7 +346,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                       const SizedBox(height: 4),
                       Text(
                         directionName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: textSecondary,
                         ),
@@ -371,14 +359,15 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
                 // BADGE PÉRIODE
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     periodeName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
@@ -391,15 +380,16 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
           // AFFICHAGE DE L'IMAGE SI DEMANDÉ
           if (isImageVisible)
-            Container(
+            SizedBox(
               height: 140,
               width: double.infinity,
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                  return const Center(
+                    child:
+                        Icon(Icons.broken_image, size: 40, color: Colors.grey),
                   );
                 },
               ),
@@ -417,13 +407,17 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildTimeItem("DÉPART", departTime, Icons.directions_boat_filled_outlined, directionColor),
+                    _buildTimeItem("DÉPART", departTime,
+                        Icons.directions_boat_filled_outlined, directionColor),
                     if (passage1Time != "--:--")
-                      _buildTimeItem("P1", passage1Time, Icons.access_time, textSecondary),
+                      _buildTimeItem(
+                          "P1", passage1Time, Icons.access_time, textSecondary),
                     if (passage2Time != "--:--")
-                      _buildTimeItem("P2", passage2Time, Icons.access_time, textSecondary),
+                      _buildTimeItem(
+                          "P2", passage2Time, Icons.access_time, textSecondary),
                     if (passage3Time != "--:--")
-                      _buildTimeItem("P3", passage3Time, Icons.access_time, textSecondary),
+                      _buildTimeItem(
+                          "P3", passage3Time, Icons.access_time, textSecondary),
                   ],
                 ),
               ],
@@ -439,11 +433,12 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                 // BOUTON MODIFIER
                 TextButton.icon(
                   onPressed: () => _showCreneauDialog(creneau: creneau),
-                  icon: Icon(Icons.edit_outlined, size: 18),
-                  label: Text("MODIFIER"),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text("MODIFIER"),
                   style: TextButton.styleFrom(
                     foregroundColor: primaryColor,
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -452,11 +447,12 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                 // BOUTON SUPPRIMER
                 TextButton.icon(
                   onPressed: () => _confirmDeleteCreneau(creneauId),
-                  icon: Icon(Icons.delete_outline, size: 18),
-                  label: Text("SUPPRIMER"),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text("SUPPRIMER"),
                   style: TextButton.styleFrom(
                     foregroundColor: accentColor,
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -476,7 +472,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         const SizedBox(height: 4),
         Text(
           time,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
           ),
@@ -484,7 +480,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 11,
             color: textSecondary,
           ),
@@ -510,7 +506,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("ANNULER", style: TextStyle(color: secondaryColor)),
+            child:
+                const Text("ANNULER", style: TextStyle(color: secondaryColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -519,9 +516,11 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: accentColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text("SUPPRIMER", style: TextStyle(color: backgroundLight)),
+            child: const Text("SUPPRIMER",
+                style: TextStyle(color: backgroundLight)),
           )
         ],
       ),
@@ -556,7 +555,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         directionId = int.parse(creneau['DIRECTION_CRENEAU_ID'].toString());
       } else {
         periodeId = int.parse(_periodes[0]['PERIODE_ID'].toString());
-        directionId = int.parse(_directions[0]['DIRECTION_CRENEAU_ID'].toString());
+        directionId =
+            int.parse(_directions[0]['DIRECTION_CRENEAU_ID'].toString());
       }
     } catch (e) {
       periodeId = 1; // Valeur de secours
@@ -565,26 +565,30 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
     // CONTROLEURS DE SAISIE DES HEURES
     final TextEditingController departController = TextEditingController(
-        text: isEditing && creneau['HORAIRE_DEPART'] != null ? creneau['HORAIRE_DEPART'].toString() : ''
-    );
+        text: isEditing && creneau['HORAIRE_DEPART'] != null
+            ? creneau['HORAIRE_DEPART'].toString()
+            : '');
 
     final TextEditingController passage1Controller = TextEditingController(
-        text: isEditing && creneau['HORAIRE_PASSAGE1'] != null && creneau['HORAIRE_PASSAGE1'] != "--:--"
+        text: isEditing &&
+                creneau['HORAIRE_PASSAGE1'] != null &&
+                creneau['HORAIRE_PASSAGE1'] != "--:--"
             ? creneau['HORAIRE_PASSAGE1'].toString()
-            : ''
-    );
+            : '');
 
     final TextEditingController passage2Controller = TextEditingController(
-        text: isEditing && creneau['HORAIRE_PASSAGE2'] != null && creneau['HORAIRE_PASSAGE2'] != "--:--"
+        text: isEditing &&
+                creneau['HORAIRE_PASSAGE2'] != null &&
+                creneau['HORAIRE_PASSAGE2'] != "--:--"
             ? creneau['HORAIRE_PASSAGE2'].toString()
-            : ''
-    );
+            : '');
 
     final TextEditingController passage3Controller = TextEditingController(
-        text: isEditing && creneau['HORAIRE_PASSAGE3'] != null && creneau['HORAIRE_PASSAGE3'] != "--:--"
+        text: isEditing &&
+                creneau['HORAIRE_PASSAGE3'] != null &&
+                creneau['HORAIRE_PASSAGE3'] != "--:--"
             ? creneau['HORAIRE_PASSAGE3'].toString()
-            : ''
-    );
+            : '');
 
     await showDialog(
       context: context,
@@ -593,16 +597,17 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
           backgroundColor: backgroundLight,
           title: Text(
             isEditing ? "MODIFIER UN CRÉNEAU" : "AJOUTER UN CRÉNEAU",
-            style: TextStyle(color: textPrimary),
+            style: const TextStyle(color: textPrimary),
           ),
           content: SingleChildScrollView(
-            child: Container(
+            child: SizedBox(
               width: 450,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // DROPDOWNS PÉRIODE & DIRECTION
-                  Text("PÉRIODE", style: TextStyle(color: textSecondary, fontSize: 14)),
+                  const Text("PÉRIODE",
+                      style: TextStyle(color: textSecondary, fontSize: 14)),
                   const SizedBox(height: 6),
                   _buildDropdown(
                     value: periodeId.toString(),
@@ -622,14 +627,16 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   const SizedBox(height: 12),
 
                   // DROPDOWN DIRECTION
-                  Text("DIRECTION", style: TextStyle(color: textSecondary, fontSize: 14)),
+                  const Text("DIRECTION",
+                      style: TextStyle(color: textSecondary, fontSize: 14)),
                   const SizedBox(height: 6),
                   _buildDropdown(
                     value: directionId.toString(),
                     items: _directions.map((direction) {
                       return DropdownMenuItem<String>(
                         value: direction['DIRECTION_CRENEAU_ID'].toString(),
-                        child: Text(direction['LIBELLE_DIRECTION'] ?? "DIRECTION SANS NOM"),
+                        child: Text(direction['LIBELLE_DIRECTION'] ??
+                            "DIRECTION SANS NOM"),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -642,15 +649,23 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   const SizedBox(height: 16),
 
                   // CHAMPS DE SAISIE D'HEURE
-                  Text("HORAIRES", style: TextStyle(color: textSecondary, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text("HORAIRES",
+                      style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  _buildTimeField("HEURE DE DÉPART *", departController, primaryColor),
+                  _buildTimeField(
+                      "HEURE DE DÉPART *", departController, primaryColor),
                   const SizedBox(height: 8),
-                  _buildTimeField("PASSAGE 1", passage1Controller, primaryColor),
+                  _buildTimeField(
+                      "PASSAGE 1", passage1Controller, primaryColor),
                   const SizedBox(height: 8),
-                  _buildTimeField("PASSAGE 2", passage2Controller, primaryColor),
+                  _buildTimeField(
+                      "PASSAGE 2", passage2Controller, primaryColor),
                   const SizedBox(height: 8),
-                  _buildTimeField("PASSAGE 3", passage3Controller, primaryColor),
+                  _buildTimeField(
+                      "PASSAGE 3", passage3Controller, primaryColor),
                 ],
               ),
             ),
@@ -658,11 +673,15 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("ANNULER", style: TextStyle(color: secondaryColor)),
+              child: const Text("ANNULER",
+                  style: TextStyle(color: secondaryColor)),
             ),
             ElevatedButton(
               onPressed: () {
-                if (departController.text.isEmpty || passage1Controller.text.isEmpty || passage2Controller.text.isEmpty || passage3Controller.text.isEmpty) {
+                if (departController.text.isEmpty ||
+                    passage1Controller.text.isEmpty ||
+                    passage2Controller.text.isEmpty ||
+                    passage3Controller.text.isEmpty) {
                   _showErrorSnackBar("TOUS LES CHAMPS SONT OBLIGATOIRES");
                   return;
                 }
@@ -678,7 +697,8 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                 };
 
                 if (isEditing) {
-                  creneauData['horaires_id'] = int.parse(creneau['HORAIRES_ID'].toString());
+                  creneauData['horaires_id'] =
+                      int.parse(creneau['HORAIRES_ID'].toString());
                   _updateCreneau(creneauData);
                 } else {
                   _addCreneau(creneauData);
@@ -687,11 +707,12 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
                 isEditing ? "MODIFIER" : "AJOUTER",
-                style: TextStyle(color: backgroundLight),
+                style: const TextStyle(color: backgroundLight),
               ),
             ),
           ],
@@ -720,11 +741,11 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButton<String>(
-        hint: Text(hint, style: TextStyle(color: textPrimary)),
+        hint: Text(hint, style: const TextStyle(color: textPrimary)),
         value: value,
         isExpanded: true,
         underline: const SizedBox(),
-        style: TextStyle(color: textPrimary),
+        style: const TextStyle(color: textPrimary),
         items: items,
         onChanged: onChanged,
       ),
@@ -732,12 +753,14 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
   }
 
   // CHAMP DE SAISIE D'HEURE AVEC TIME PICKER
-  Widget _buildTimeField(String label, TextEditingController controller, Color color) {
+  Widget _buildTimeField(
+      String label, TextEditingController controller, Color color) {
     return Row(
       children: [
         SizedBox(
           width: 120,
-          child: Text(label, style: TextStyle(color: textSecondary, fontSize: 14)),
+          child: Text(label,
+              style: const TextStyle(color: textSecondary, fontSize: 14)),
         ),
         Expanded(
           child: TextField(
@@ -746,18 +769,21 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
               hintText: "HH:MM",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: textSecondary),
+                borderSide: const BorderSide(color: textSecondary),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: color, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               suffixIcon: GestureDetector(
                 onTap: () async {
                   final TimeOfDay? picked = await showTimePicker(
                     context: context,
-                    initialTime: controller.text.isNotEmpty ? _parseTimeString(controller.text) : TimeOfDay.now(),
+                    initialTime: controller.text.isNotEmpty
+                        ? _parseTimeString(controller.text)
+                        : TimeOfDay.now(),
                     builder: (context, child) {
                       return Theme(
                         data: ThemeData.light().copyWith(
@@ -778,7 +804,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                 child: Icon(Icons.access_time, color: color),
               ),
             ),
-            style: TextStyle(color: textPrimary),
+            style: const TextStyle(color: textPrimary),
           ),
         ),
       ],
@@ -812,10 +838,13 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
         backgroundColor: primaryColor,
         title: const Text(
           'GESTION DES CRÉNEAUX HORAIRES',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: backgroundLight),
+          style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              color: backgroundLight),
         ),
       ),
-      
+
       // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
       body: _isLoading
@@ -825,14 +854,15 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.schedule, size: 80, color: textSecondary.withOpacity(0.5)),
+                      Icon(Icons.schedule,
+                          size: 80, color: textSecondary.withOpacity(0.5)),
                       const SizedBox(height: 24),
-                      Text(
+                      const Text(
                         "AUCUN CRÉNEAU HORAIRE TROUVÉ",
                         style: TextStyle(fontSize: 18, color: textPrimary),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      const Text(
                         "AJOUTEZ UN NOUVEAU CRÉNEAU AVEC LE BOUTON CI-DESSOUS",
                         style: TextStyle(fontSize: 14, color: textSecondary),
                       ),
@@ -845,10 +875,11 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     itemCount: _creneaux.length,
-                    itemBuilder: (context, index) => _buildCreneauCard(_creneaux[index]),
+                    itemBuilder: (context, index) =>
+                        _buildCreneauCard(_creneaux[index]),
                   ),
                 ),
-      
+
       // BOUTON D'AJOUT
       floatingActionButton: _isFormDataLoaded
           ? FloatingActionButton(

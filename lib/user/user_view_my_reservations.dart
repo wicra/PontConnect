@@ -3,9 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:pontconnect/auth/user_session_storage.dart';
-
-// IMPORT DES CONSTANTES
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
+import 'package:pontconnect/core/notification_helper.dart';
 
 // ÉCRAN DES RÉSERVATIONS UTILISATEUR
 class ViewMyReservations extends StatefulWidget {
@@ -26,22 +25,16 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
 
   // RÉCUPÉRATION DES RÉSERVATIONS
   Future<void> _fetchReservations() async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
-
     final int? userId = UserSession.userId;
-
     if (userId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("UTILISATEUR NON CONNECTÉ")));
+      NotificationHelper.showWarning(context, "UTILISATEUR NON CONNECTÉ");
       return;
     }
 
@@ -51,13 +44,13 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
 
     // APPEL API
     final url = Uri.parse("${ApiConstants.baseUrl}user/reservations?user_id=$userId");
-    
+
     try {
       final response = await http.get(
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
       final data = json.decode(response.body);
@@ -68,22 +61,15 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
           _reservations = data["reservations"];
         });
       }
-
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      } 
-      
-      else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("ERREUR API")));
+      } else {
+        NotificationHelper.showError(context, "ERREUR API");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR : ${e.toString()}")));
+      NotificationHelper.showError(context, "ERREUR : ${e.toString()}");
     }
 
     setState(() {
@@ -107,13 +93,10 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
 
   // MISE À JOUR DU STATUT DE RÉSERVATION
   Future<void> _updateStatus(String reservationId, String newStatus, dynamic reservation) async {
-
-    // RECUPERATION DU TOKEN JWT
+    // RÉCUPÉRATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
@@ -136,35 +119,27 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
-        }, 
+          'Authorization': 'Bearer $token',
+        },
         body: body
       );
-      
+
       final data = json.decode(response.body);
-      
+
       // SUCCÈS
       if (data["success"] == true) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("STATUT MIS À JOUR")));
+        NotificationHelper.showSuccess(context, "STATUT MIS À JOUR");
         _fetchReservations();
-      } 
-
+      }
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-      
-      else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("ERREUR LORS DE LA MISE À JOUR: ${data["message"]}")));
+      } else {
+        NotificationHelper.showError(context, "ERREUR LORS DE LA MISE À JOUR: ${data["message"]}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("ERREUR : ${e.toString()}")));
+      NotificationHelper.showError(context, "ERREUR : ${e.toString()}");
     }
   }
 
@@ -172,7 +147,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
   bool _isReservationPast(dynamic reservation) {
     final String dateStr = reservation['reservation_date'] ?? "";
     if (dateStr.isEmpty) return false;
-    
+
     DateTime reservationDate;
     try {
       reservationDate = DateFormat('yyyy-MM-dd').parse(dateStr);
@@ -246,7 +221,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                     children: [
                       Text(
                         pontName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'DarumadropOne',
@@ -256,7 +231,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                       const SizedBox(height: 4),
                       Text(
                         "BATEAU : $bateauName",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontFamily: 'DarumadropOne',
                           color: textSecondary,
@@ -265,33 +240,16 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                     ],
                   ),
                 ),
-                
-                // AFFICHAGE DU STATUT (TEXTE OU MENU DÉROULANT)
+
+                // AFFICHAGE DU STATUT
                 isPast
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _getStatusColor(realStatus)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        realStatus,
-                        style: TextStyle(
-                          fontFamily: 'DarumadropOne',
-                          color: _getStatusColor(realStatus),
-                          fontSize: 14,
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: _getStatusColor(realStatus)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                    )
-                  : Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _getStatusColor(realStatus)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButton<String>(
-                        value: currentStatusAllowed ? realStatus : null,
-                        hint: Text(
+                        child: Text(
                           realStatus,
                           style: TextStyle(
                             fontFamily: 'DarumadropOne',
@@ -299,65 +257,84 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
                             fontSize: 14,
                           ),
                         ),
-                        icon: Icon(Icons.arrow_drop_down, color: _getStatusColor(realStatus)),
-                        style: TextStyle(
-                          fontFamily: 'DarumadropOne',
-                          color: _getStatusColor(realStatus),
-                          fontSize: 14,
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: _getStatusColor(realStatus)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        dropdownColor: backgroundCream,
-                        underline: Container(),
-                        items: allowedStatusOptions.map((statusOption) {
-                          return DropdownMenuItem<String>(
-                            value: statusOption,
-                            child: Text(
-                              statusOption,
-                              style: TextStyle(
-                                fontFamily: 'DarumadropOne',
-                                color: _getStatusColor(statusOption),
-                                fontSize: 14,
-                              ),
+                        child: DropdownButton<String>(
+                          value: currentStatusAllowed ? realStatus : null,
+                          hint: Text(
+                            realStatus,
+                            style: TextStyle(
+                              fontFamily: 'DarumadropOne',
+                              color: _getStatusColor(realStatus),
+                              fontSize: 14,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (String? newStatus) {
-                          if (newStatus != null && newStatus != realStatus) {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  backgroundColor: backgroundLight,
-                                  title: Text(
-                                    "CONFIRMER",
-                                    style: TextStyle(fontFamily: 'DarumadropOne', color: textPrimary),
-                                  ),
-                                  content: Container(
-                                    width: 450,
-                                    child: Text(
-                                      "CHANGER LE STATUT EN '$newStatus' ?",
-                                      style: TextStyle(fontFamily: 'DarumadropOne'),
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      child: Text("ANNULER", style: TextStyle(fontFamily: 'DarumadropOne')),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        _updateStatus(reservationId, newStatus, reservation);
-                                      },
-                                      child: Text("CONFIRMER", style: TextStyle(fontFamily: 'DarumadropOne')),
-                                    ),
-                                  ],
-                                );
-                              },
+                          ),
+                          icon: Icon(Icons.arrow_drop_down, color: _getStatusColor(realStatus)),
+                          style: TextStyle(
+                            fontFamily: 'DarumadropOne',
+                            color: _getStatusColor(realStatus),
+                            fontSize: 14,
+                          ),
+                          dropdownColor: backgroundCream,
+                          underline: Container(),
+                          items: allowedStatusOptions.map((statusOption) {
+                            return DropdownMenuItem<String>(
+                              value: statusOption,
+                              child: Text(
+                                statusOption,
+                                style: TextStyle(
+                                  fontFamily: 'DarumadropOne',
+                                  color: _getStatusColor(statusOption),
+                                  fontSize: 14,
+                                ),
+                              ),
                             );
-                          }
-                        },
+                          }).toList(),
+                          onChanged: (String? newStatus) {
+                            if (newStatus != null && newStatus != realStatus) {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    backgroundColor: backgroundLight,
+                                    title: const Text(
+                                      "CONFIRMER",
+                                      style: TextStyle(fontFamily: 'DarumadropOne', color: textPrimary),
+                                    ),
+                                    content: SizedBox(
+                                      width: 450,
+                                      child: Text(
+                                        "CHANGER LE STATUT EN '$newStatus' ?",
+                                        style: const TextStyle(fontFamily: 'DarumadropOne'),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        child: const Text("ANNULER", 
+                                          style: TextStyle(fontFamily: 'DarumadropOne')),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          _updateStatus(reservationId, newStatus, reservation);
+                                        },
+                                        child: const Text("CONFIRMER", 
+                                          style: TextStyle(fontFamily: 'DarumadropOne')),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                          },
+                        ),
                       ),
-                    ),
               ],
             ),
             const SizedBox(height: 8),
@@ -365,7 +342,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
             // CRÉNEAU HORAIRE
             Text(
               creneau,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontStyle: FontStyle.italic,
                 color: textSecondary,
@@ -373,11 +350,11 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // DATE DE RÉSERVATION
             Text(
               "DATE : ${DateFormat('yyyy-MM-dd').format(DateTime.tryParse(reservationDateStr) ?? DateTime.now())}",
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: textSecondary,
                 fontFamily: 'DarumadropOne',
@@ -413,31 +390,31 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
           ),
         ],
       ),
-      
+
       // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
       body: _isLoading
-        ? Center(child: CircularProgressIndicator(color: primaryColor))
-        : _reservations.isEmpty
-          ? Center(
-              child: Text(
-                "AUCUNE RÉSERVATION",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'DarumadropOne',
-                  color: textPrimary
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          : _reservations.isEmpty
+              ? const Center(
+                  child: Text(
+                    "AUCUNE RÉSERVATION",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'DarumadropOne',
+                      color: textPrimary
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _fetchReservations,
+                  child: ListView.builder(
+                    itemCount: _reservations.length,
+                    itemBuilder: (context, index) {
+                      return _buildReservationCard(_reservations[index]);
+                    },
+                  ),
                 ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _fetchReservations,
-              child: ListView.builder(
-                itemCount: _reservations.length,
-                itemBuilder: (context, index) {
-                  return _buildReservationCard(_reservations[index]);
-                },
-              ),
-            ),
     );
   }
 }

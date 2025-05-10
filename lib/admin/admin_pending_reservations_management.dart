@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../constants.dart';
+import 'package:pontconnect/core/constants.dart';
 import 'package:pontconnect/auth/user_session_storage.dart';
+import 'package:pontconnect/core/notification_helper.dart';
 
 // GESTION DES RÉSERVATIONS EN ATTENTE
 class AdminPendingReservations extends StatefulWidget {
   @override
-  _AdminPendingReservationsState createState() => _AdminPendingReservationsState();
+  _AdminPendingReservationsState createState() =>
+      _AdminPendingReservationsState();
 }
 
 class _AdminPendingReservationsState extends State<AdminPendingReservations> {
@@ -24,13 +26,9 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
   // RÉCUPÉRATION DES RÉSERVATIONS
   Future<void> _fetchReservations() async {
-
-    // RECUPERATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
 
@@ -45,8 +43,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
-        },      
+          'Authorization': 'Bearer $token',
+        },
       );
 
       // VÉRIFIER SI LA RÉPONSE EST DU JSON VALIDE
@@ -65,31 +63,24 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         setState(() {
           _reservations = data["reservations"];
         });
-      } 
+      }
 
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-        );
+        NotificationHelper.showWarning(
+            context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
-      }
-
-      else {
+      } else {
         setState(() {
           _errorMessage = data["message"] ?? "Erreur inconnue";
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage, style: TextStyle(color: backgroundLight))),
-        );
+        NotificationHelper.showError(context, _errorMessage);
       }
     } catch (e) {
       setState(() {
         _errorMessage = "ERREUR: $e";
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_errorMessage, style: TextStyle(color: backgroundLight))),
-      );
+      NotificationHelper.showError(context, _errorMessage);
     }
     setState(() {
       _isLoading = false;
@@ -98,21 +89,18 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
   // MISE À JOUR DU STATUT DE RÉSERVATION
   Future<void> _updateStatus(String reservationId, String newStatus) async {
-    
-    // RECUPERATION DU TOKEN JWT
     final token = UserSession.userToken;
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token JWT non trouvé')),
-      );
+      NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
 
-    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
+    final url =
+        Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus,
@@ -123,8 +111,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         url,
         headers: {
           "Content-Type": "application/json",
-          'Authorization': 'Bearer $token', // TOKEN JWT
-        }, 
+          'Authorization': 'Bearer $token',
+        },
         body: body,
       );
 
@@ -135,21 +123,14 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
           // SUCCÈS
           if (data["success"] == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data["message"], style: TextStyle(color: backgroundLight)),
-                backgroundColor: primaryColor,
-              ),
-            );
-            // RECHARGER LES RÉSERVATIONS
+            NotificationHelper.showSuccess(context, data["message"]);
             _fetchReservations();
-          } 
-          
+          }
+
           // SESSION EXPIREE
           else if (response.statusCode == 403) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Session expirée. Veuillez vous reconnecter.')),
-            );
+            NotificationHelper.showWarning(
+                context, 'Session expirée. Veuillez vous reconnecter.');
             Navigator.pushReplacementNamed(context, '/login_screen');
           }
 
@@ -158,62 +139,34 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
             setState(() {
               _isLoading = false;
             });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data["message"] ?? "Erreur inconnue", style: TextStyle(color: backgroundLight)),
-                backgroundColor: accentColor,
-              ),
-            );
+            NotificationHelper.showError(
+                context, data["message"] ?? "Erreur inconnue");
           }
         } catch (e) {
           setState(() {
             _isLoading = false;
           });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Erreur: Réponse non valide", style: TextStyle(color: backgroundLight)),
-              backgroundColor: accentColor,
-            ),
-          );
+          NotificationHelper.showError(context, "Erreur: Réponse non valide");
         }
       } else {
-        // Gérer les erreurs HTTP
         setState(() {
           _isLoading = false;
         });
 
-        // Tenter d'extraire un message d'erreur JSON si disponible
         try {
           final errorData = json.decode(response.body);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Erreur ${response.statusCode}: ${errorData['message'] ?? 'Inconnu'}", style: TextStyle(color: backgroundLight)),
-              backgroundColor: accentColor,
-            ),
-          );
+          NotificationHelper.showError(context,
+              "Erreur ${response.statusCode}: ${errorData['message'] ?? 'Inconnu'}");
         } catch (e) {
-          // Fallback pour les erreurs non-JSON
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Erreur ${response.statusCode}", style: TextStyle(color: backgroundLight)),
-              backgroundColor: accentColor,
-            ),
-          );
+          NotificationHelper.showError(
+              context, "Erreur ${response.statusCode}");
         }
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("ERREUR: $e", style: TextStyle(color: backgroundLight)),
-          backgroundColor: accentColor,
-        ),
-      );
+      NotificationHelper.showError(context, "ERREUR: $e");
     }
   }
 
@@ -237,28 +190,35 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
     try {
       final parts = inputDate.split('-');
       if (parts.length == 3) {
-        return "${parts[2]}/${parts[1]}/${parts[0]}"; // jour/mois/année
+        return "${parts[2]}/${parts[1]}/${parts[0]}";
       }
     } catch (e) {}
 
-    return inputDate; // Retourner la date originale si le format est incorrect
+    return inputDate;
   }
 
   // CONSTRUCTION DE LA CARTE DE RÉSERVATION
   Widget _buildReservationCard(dynamic reservation) {
     final String reservationId = reservation['reservation_id'];
-    final String direction = reservation['direction'] ?? reservation['pont_name'] ?? "DIRECTION INCONNUE";
+    final String direction = reservation['direction'] ??
+        reservation['pont_name'] ??
+        "DIRECTION INCONNUE";
     final String bateauName = reservation['bateau_name'] ?? "BATEAU INCONNU";
-    final String bateauImmatriculation = reservation['bateau_immatriculation'] ?? "IMMATRICULATION INCONNUE";
-    final double bateauHauteur = double.tryParse(reservation['bateau_hauteur']?.toString() ?? "0") ?? 0.0;
+    final String bateauImmatriculation =
+        reservation['bateau_immatriculation'] ?? "IMMATRICULATION INCONNUE";
+    final double bateauHauteur =
+        double.tryParse(reservation['bateau_hauteur']?.toString() ?? "0") ??
+            0.0;
     final String libelle = reservation['libelle'] ?? "";
     final String heureDebut = (reservation['heure_debut'] ?? "").toString();
     final String heureFin = (reservation['heure_fin'] ?? "").toString();
     final String userName = reservation['user_name'] ?? "UTILISATEUR INCONNU";
     final String reservationDate = reservation['reservation_date'] ?? "";
     final String currentStatus = reservation['statut'] ?? "en attente";
-    final int confirmedCount = int.tryParse(reservation['confirmed_count']?.toString() ?? "0") ?? 0;
-    final int capaciteMax = int.tryParse(reservation['capacite_max']?.toString() ?? "0") ?? 0;
+    final int confirmedCount =
+        int.tryParse(reservation['confirmed_count']?.toString() ?? "0") ?? 0;
+    final int capaciteMax =
+        int.tryParse(reservation['capacite_max']?.toString() ?? "0") ?? 0;
 
     // FORMATAGE DES DONNÉES
     String formattedDate = _formatDate(reservationDate);
@@ -274,7 +234,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
     double progress = capaciteMax > 0 ? confirmedCount / capaciteMax : 0;
 
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 5,
       color: backgroundCard,
@@ -283,10 +243,10 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         children: [
           // EN-TÊTE AVEC DATE ET STATUT
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
@@ -296,14 +256,15 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
               children: [
                 // DATE DE RÉSERVATION MISE EN ÉVIDENCE
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: primaryColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     formattedDate,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: backgroundLight,
@@ -313,7 +274,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                 ),
                 // STATUT ACTUEL
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     border: Border.all(color: _getStatusColor(currentStatus)),
                     borderRadius: BorderRadius.circular(8),
@@ -335,7 +297,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
           // CONTENU PRINCIPAL
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -343,25 +305,26 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.directions_boat, color: primaryColor, size: 24),
-                    SizedBox(width: 8),
+                    const Icon(Icons.directions_boat,
+                        color: primaryColor, size: 24),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             direction,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: primaryColor,
                               fontFamily: 'DarumadropOne',
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             bateauName,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 15,
                               color: textPrimary,
                               fontFamily: 'DarumadropOne',
@@ -375,11 +338,12 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.badge, color: secondaryColor, size: 16),
-                            SizedBox(width: 4),
+                            const Icon(Icons.badge,
+                                color: secondaryColor, size: 16),
+                            const SizedBox(width: 4),
                             Text(
                               bateauImmatriculation,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 color: secondaryColor,
                                 fontFamily: 'DarumadropOne',
@@ -387,14 +351,15 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.height, color: secondaryColor, size: 16),
-                            SizedBox(width: 4),
+                            const Icon(Icons.height,
+                                color: secondaryColor, size: 16),
+                            const SizedBox(width: 4),
                             Text(
                               "${bateauHauteur.toStringAsFixed(2)} M",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 color: secondaryColor,
                                 fontFamily: 'DarumadropOne',
@@ -407,17 +372,21 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                   ],
                 ),
 
-                Divider(height: 24, thickness: 1, color: secondaryColor.withOpacity(0.3)),
+                Divider(
+                    height: 24,
+                    thickness: 1,
+                    color: secondaryColor.withOpacity(0.3)),
 
                 // LIGNE 2 - CRÉNEAU ET CONFIRMATIONS
                 Row(
                   children: [
-                    Icon(Icons.access_time, color: primaryColor, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.access_time,
+                        color: primaryColor, size: 20),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         creneauText,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                           color: textPrimary,
@@ -426,11 +395,14 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: progress >= 0.8 ? Colors.red.withOpacity(0.1) :
-                               progress >= 0.5 ? Colors.orange.withOpacity(0.1) :
-                               Colors.green.withOpacity(0.1),
+                        color: progress >= 0.8
+                            ? Colors.red.withOpacity(0.1)
+                            : progress >= 0.5
+                                ? Colors.orange.withOpacity(0.1)
+                                : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -438,9 +410,11 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: progress >= 0.8 ? accentColor :
-                                 progress >= 0.5 ? tertiaryColor :
-                                 primaryColor,
+                          color: progress >= 0.8
+                              ? accentColor
+                              : progress >= 0.5
+                                  ? tertiaryColor
+                                  : primaryColor,
                           fontFamily: 'DarumadropOne',
                         ),
                       ),
@@ -448,7 +422,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                   ],
                 ),
 
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
 
                 // BARRE DE PROGRESSION
                 ClipRRect(
@@ -457,25 +431,25 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                     value: progress,
                     minHeight: 8,
                     backgroundColor: textSecondary.withOpacity(0.2),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 0.8 ? accentColor:
-                        progress >= 0.5 ? tertiaryColor :
-                        primaryColor
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(progress >= 0.8
+                        ? accentColor
+                        : progress >= 0.5
+                            ? tertiaryColor
+                            : primaryColor),
                   ),
                 ),
 
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 // LIGNE 3 - UTILISATEUR
                 Row(
                   children: [
-                    Icon(Icons.person, color: primaryColor, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.person, color: primaryColor, size: 20),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         userName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: textPrimary,
                           fontFamily: 'DarumadropOne',
@@ -485,7 +459,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                   ],
                 ),
 
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 // LIGNE 4 - BOUTONS D'ACTION
                 Row(
@@ -493,61 +467,66 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                   children: [
                     // BOUTON CONFIRMER
                     ElevatedButton.icon(
-                      onPressed: currentStatus == "confirmé" ? null : () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: backgroundLight,
-                            title: Text(
-                              "CONFIRMATION",
-                              style: TextStyle(
-                                fontFamily: 'DarumadropOne',
-                                color: textPrimary,
-                              ),
-                            ),
-                            content: Text(
-                              "Voulez-vous confirmer cette réservation ?",
-                              style: TextStyle(
-                                fontFamily: 'DarumadropOne',
-                                color: textSecondary,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(
-                                  "ANNULER",
-                                  style: TextStyle(
-                                    fontFamily: 'DarumadropOne',
-                                    color: secondaryColor,
+                      onPressed: currentStatus == "confirmé"
+                          ? null
+                          : () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: backgroundLight,
+                                  title: const Text(
+                                    "CONFIRMATION",
+                                    style: TextStyle(
+                                      fontFamily: 'DarumadropOne',
+                                      color: textPrimary,
+                                    ),
                                   ),
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _updateStatus(reservationId, "confirmé");
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  content: const Text(
+                                    "Voulez-vous confirmer cette réservation ?",
+                                    style: TextStyle(
+                                      fontFamily: 'DarumadropOne',
+                                      color: textSecondary,
+                                    ),
                                   ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text(
+                                        "ANNULER",
+                                        style: TextStyle(
+                                          fontFamily: 'DarumadropOne',
+                                          color: secondaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _updateStatus(
+                                            reservationId, "confirmé");
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primaryColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "CONFIRMER",
+                                        style: TextStyle(
+                                          fontFamily: 'DarumadropOne',
+                                          color: backgroundLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(
-                                  "CONFIRMER",
-                                  style: TextStyle(
-                                    fontFamily: 'DarumadropOne',
-                                    color: backgroundLight,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.check_circle, color: backgroundLight),
-                      label: Text(
+                              );
+                            },
+                      icon: const Icon(Icons.check_circle,
+                          color: backgroundLight),
+                      label: const Text(
                         "CONFIRMER",
                         style: TextStyle(
                           fontSize: 12,
@@ -561,67 +540,71 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     // BOUTON ANNULER
                     ElevatedButton.icon(
-                      onPressed: currentStatus == "annulé" ? null : () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: backgroundLight,
-                            title: Text(
-                              "CONFIRMATION",
-                              style: TextStyle(
-                                fontFamily: 'DarumadropOne',
-                                color: textPrimary,
-                              ),
-                            ),
-                            content: Text(
-                              "Voulez-vous annuler cette réservation ?",
-                              style: TextStyle(
-                                fontFamily: 'DarumadropOne',
-                                color: textSecondary,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(
-                                  "RETOUR",
-                                  style: TextStyle(
-                                    fontFamily: 'DarumadropOne',
-                                    color: secondaryColor,
+                      onPressed: currentStatus == "annulé"
+                          ? null
+                          : () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: backgroundLight,
+                                  title: const Text(
+                                    "CONFIRMATION",
+                                    style: TextStyle(
+                                      fontFamily: 'DarumadropOne',
+                                      color: textPrimary,
+                                    ),
                                   ),
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _updateStatus(reservationId, "annulé");
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: accentColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  content: const Text(
+                                    "Voulez-vous annuler cette réservation ?",
+                                    style: TextStyle(
+                                      fontFamily: 'DarumadropOne',
+                                      color: textSecondary,
+                                    ),
                                   ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text(
+                                        "RETOUR",
+                                        style: TextStyle(
+                                          fontFamily: 'DarumadropOne',
+                                          color: secondaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _updateStatus(reservationId, "annulé");
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: accentColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "ANNULER",
+                                        style: TextStyle(
+                                          fontFamily: 'DarumadropOne',
+                                          color: backgroundLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(
-                                  "ANNULER",
-                                  style: TextStyle(
-                                    fontFamily: 'DarumadropOne',
-                                    color: backgroundLight,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.cancel, color: backgroundLight),
-                      label: Text(
+                              );
+                            },
+                      icon: const Icon(Icons.cancel, color: backgroundLight),
+                      label: const Text(
                         "ANNULER",
                         style: TextStyle(
                           fontSize: 12,
@@ -635,7 +618,8 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                     ),
                   ],
@@ -666,13 +650,13 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: backgroundLight),
+            icon: const Icon(Icons.refresh, color: backgroundLight),
             onPressed: _fetchReservations,
             tooltip: "Actualiser",
           ),
         ],
       ),
-      
+
       // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
       body: _isLoading
@@ -680,9 +664,9 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: secondaryColor),
-                  SizedBox(height: 16),
-                  Text(
+                  const CircularProgressIndicator(color: secondaryColor),
+                  const SizedBox(height: 16),
+                  const Text(
                     "CHARGEMENT...",
                     style: TextStyle(
                       color: textSecondary,
@@ -698,49 +682,51 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         color: accentColor,
                         size: 60,
                       ),
-                      SizedBox(height: 16),
-                      Text(
+                      const SizedBox(height: 16),
+                      const Text(
                         "ERREUR",
                         style: TextStyle(
-                            fontSize: 18,
-                            color: accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DarumadropOne'
+                          fontSize: 18,
+                          color: accentColor,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'DarumadropOne',
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
                           _errorMessage,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: textPrimary,
-                              fontFamily: 'DarumadropOne'
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: textPrimary,
+                            fontFamily: 'DarumadropOne',
                           ),
                         ),
                       ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _fetchReservations,
-                        icon: Icon(Icons.refresh, color: backgroundLight),
-                        label: Text(
+                        icon: const Icon(Icons.refresh, color: backgroundLight),
+                        label: const Text(
                           "RÉESSAYER",
                           style: TextStyle(
-                              color: backgroundLight,
-                              fontFamily: 'DarumadropOne'
+                            color: backgroundLight,
+                            fontFamily: 'DarumadropOne',
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
                     ],
@@ -756,31 +742,34 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                             color: textSecondary.withOpacity(0.5),
                             size: 60,
                           ),
-                          SizedBox(height: 16),
-                          Text(
+                          const SizedBox(height: 16),
+                          const Text(
                             "AUCUNE RÉSERVATION EN ATTENTE",
                             style: TextStyle(
-                                fontSize: 18,
-                                color: textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'DarumadropOne'
+                              fontSize: 18,
+                              color: textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DarumadropOne',
                             ),
                           ),
-                          SizedBox(height: 24),
+                          const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: _fetchReservations,
-                            icon: Icon(Icons.refresh, color: backgroundLight),
-                            label: Text(
+                            icon: const Icon(Icons.refresh,
+                                color: backgroundLight),
+                            label: const Text(
                               "ACTUALISER",
                               style: TextStyle(
-                                  color: backgroundLight,
-                                  fontFamily: 'DarumadropOne'
+                                color: backgroundLight,
+                                fontFamily: 'DarumadropOne',
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
                             ),
                           ),
                         ],
@@ -790,7 +779,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
                       onRefresh: _fetchReservations,
                       color: primaryColor,
                       child: ListView.builder(
-                        padding: EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         itemCount: _reservations.length,
                         itemBuilder: (context, index) {
                           return _buildReservationCard(_reservations[index]);

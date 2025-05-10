@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pontconnect/auth/login.dart';
 import 'package:pontconnect/auth/register.dart';
-import 'package:pontconnect/public/user_main_view.dart';
-import 'package:pontconnect/startup_animation.dart';
+import 'package:pontconnect/user/user_main_view.dart';
+import 'package:pontconnect/core/startup_animation.dart';
 import 'package:pontconnect/auth/user_session_storage.dart'; // Ajout de cette ligne
 
 // CENTRALISATION COULEURS & API
-import 'package:pontconnect/constants.dart';
+import 'package:pontconnect/core/constants.dart';
 
 import 'admin/admin_main_view.dart';
 

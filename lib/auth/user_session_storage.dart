@@ -18,8 +18,7 @@ class UserSession {
       required String email,
       required int type,
       required String token}) async {
-    
-	// RE SAUVEGARDE DES DONNEES
+    // RE SAUVEGARDE DES DONNEES
     userId = id;
     userName = name;
     userEmail = email;
