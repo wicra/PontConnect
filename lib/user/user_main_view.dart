@@ -151,7 +151,7 @@ class _UserPageState extends State<UserPage> {
             borderRadius: BorderRadius.circular(16),
             child: Container(
               color: backgroundLight,
-              height: 380,
+              height: 260,
               child: UserAddReservation(),
             ),
           ),

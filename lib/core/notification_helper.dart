@@ -56,7 +56,7 @@ class NotificationHelper {
     showTopSnackBar(
       context: context,
       message: message,
-      backgroundColor: primaryColor,
+      backgroundColor: secondaryColor,
       icon: Icons.check_circle,
     );
   }
@@ -86,7 +86,7 @@ class NotificationHelper {
     showTopSnackBar(
       context: context,
       message: message,
-      backgroundColor: Colors.orange,
+      backgroundColor: textSecondary,
       icon: Icons.warning,
     );
   }
