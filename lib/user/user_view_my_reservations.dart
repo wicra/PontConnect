@@ -101,7 +101,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     }
 
     // PRÉPARATION REQUÊTE API
-    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status");
 
     final body = json.encode({
       "reservation_id": reservationId,
@@ -115,7 +115,7 @@ class _ViewMyReservationsState extends State<ViewMyReservations> {
     });
 
     try {
-      final response = await http.post(
+      final response = await http.patch(
         url,
         headers: {
           "Content-Type": "application/json",
