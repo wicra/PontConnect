@@ -94,10 +94,10 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
     if (userId == null) return;
 
     final url = Uri.parse(
-        "${ApiConstants.baseUrl}user/boats/del?bateau_id=$bateauId&user_id=$userId");
+        "${ApiConstants.baseUrl}user/boats?bateau_id=$bateauId&user_id=$userId");
 
     try {
-      final response = await http.get(
+      final response = await http.delete(
         url,
         headers: {
           "Content-Type": "application/json",
@@ -338,7 +338,7 @@ class _ViewUserBateauxState extends State<ViewUserBateaux> {
       return;
     }
 
-    final url = Uri.parse("${ApiConstants.baseUrl}user/boats/add");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/boats");
     final body = {
       "user_id": userId.toString(),
       "nom": nom,

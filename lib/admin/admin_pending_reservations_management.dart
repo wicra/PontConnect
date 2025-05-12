@@ -100,14 +100,14 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
     });
 
     final url =
-        Uri.parse("${ApiConstants.baseUrl}user/reservations-status/update");
+        Uri.parse("${ApiConstants.baseUrl}user/reservations-status");
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus,
     });
 
     try {
-      final response = await http.post(
+      final response = await http.patch(
         url,
         headers: {
           "Content-Type": "application/json",

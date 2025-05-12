@@ -91,7 +91,7 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
     try {
       final url = Uri.parse(
-          '${ApiConstants.baseUrl}admin//horaires-creneaux/form-data');
+          '${ApiConstants.baseUrl}admin/horaires-creneaux/form-data');
       final response = await http.get(
         url,
         headers: {
@@ -136,40 +136,9 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
 
   // AJOUT D'UN CRÉNEAU
   Future<void> _addCreneau(Map<String, dynamic> creneauData) async {
-    await _postRequest(
-      url: '${ApiConstants.baseUrl}admin/horaires-creneaux/add',
-      data: creneauData,
-      successMessage: "CRÉNEAU AJOUTÉ AVEC SUCCÈS",
-    );
-  }
-
-  // MISE À JOUR D'UN CRÉNEAU
-  Future<void> _updateCreneau(Map<String, dynamic> creneauData) async {
-    await _postRequest(
-      url: '${ApiConstants.baseUrl}admin//horaires-creneaux/update',
-      data: creneauData,
-      successMessage: "CRÉNEAU MIS À JOUR AVEC SUCCÈS",
-    );
-  }
-
-  // SUPPRESSION D'UN CRÉNEAU
-  Future<void> _deleteCreneau(int creneauId) async {
-    await _postRequest(
-      url: '${ApiConstants.baseUrl}admin//horaires-creneaux/delete',
-      data: {"horaires_id": creneauId},
-      successMessage: "CRÉNEAU SUPPRIMÉ AVEC SUCCÈS",
-    );
-  }
-
-  // MÉTHODE GÉNÉRIQUE POUR LES REQUÊTES POST
-  Future<void> _postRequest({
-    required String url,
-    required Map<String, dynamic> data,
-    required String successMessage,
-  }) async {
     final token = UserSession.userToken;
     if (token == null) {
-      NotificationHelper.showError(context, 'Token JWT non trouvé');
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
       return;
     }
 
@@ -180,44 +149,176 @@ class _AdminCreneauManagementState extends State<AdminCreneauManagement> {
     });
 
     try {
-      final uri = Uri.parse(url);
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}admin/horaires-creneaux');
       final response = await http.post(
-        uri,
+        url,
         headers: {
           "Content-Type": "application/json",
           'Authorization': 'Bearer $token',
         },
-        body: json.encode(data),
+        body: json.encode(creneauData),
       );
 
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         try {
-          final respData = json.decode(response.body);
-          if (respData['success'] == true) {
-            NotificationHelper.showSuccess(context, successMessage);
+          final data = json.decode(response.body);
+          if (data['success'] == true) {
+            NotificationHelper.showSuccess(
+                context, "CRÉNEAU AJOUTÉ AVEC SUCCÈS");
 
             await Future.delayed(const Duration(milliseconds: 100));
             if (mounted) {
               await _fetchCreneaux();
             }
           } else {
-            NotificationHelper.showError(
-                context, respData['message'] ?? "ERREUR LORS DE L'OPÉRATION");
+            NotificationHelper.showError(context,
+                data['message'] ?? "ERREUR LORS DE L'AJOUT DU CRÉNEAU");
           }
         } catch (e) {
           NotificationHelper.showError(context, "ERREUR DE DÉCODAGE JSON: $e");
         }
       }
-
       // SESSION EXPIREE
       else if (response.statusCode == 403) {
         NotificationHelper.showWarning(
-            context, 'Session expirée. Veuillez vous reconnecter.');
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
         Navigator.pushReplacementNamed(context, '/login_screen');
       }
+      // AUTRES ERREURS
+      else {
+        NotificationHelper.showError(
+            context, "ERREUR HTTP ${response.statusCode}");
+      }
+    } catch (e) {
+      NotificationHelper.showError(context, "ERREUR: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
+  // MISE À JOUR D'UN CRÉNEAU
+  Future<void> _updateCreneau(Map<String, dynamic> creneauData) async {
+    final token = UserSession.userToken;
+    if (token == null) {
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final url =
+          Uri.parse('${ApiConstants.baseUrl}admin/horaires-creneaux');
+      final response = await http.patch(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(creneauData),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        try {
+          final data = json.decode(response.body);
+          if (data['success'] == true) {
+            NotificationHelper.showSuccess(
+                context, "CRÉNEAU MIS À JOUR AVEC SUCCÈS");
+
+            await Future.delayed(const Duration(milliseconds: 100));
+            if (mounted) {
+              await _fetchCreneaux();
+            }
+          } else {
+            NotificationHelper.showError(context,
+                data['message'] ?? "ERREUR LORS DE LA MISE À JOUR DU CRÉNEAU");
+          }
+        } catch (e) {
+          NotificationHelper.showError(context, "ERREUR DE DÉCODAGE JSON: $e");
+        }
+      }
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
+      // AUTRES ERREURS
+      else {
+        NotificationHelper.showError(
+            context, "ERREUR HTTP ${response.statusCode}");
+      }
+    } catch (e) {
+      NotificationHelper.showError(context, "ERREUR: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // SUPPRESSION D'UN CRÉNEAU
+  Future<void> _deleteCreneau(int creneauId) async {
+    final token = UserSession.userToken;
+    if (token == null) {
+      NotificationHelper.showError(context, 'TOKEN JWT NON TROUVÉ');
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}admin/horaires-creneaux?horaires_id=$creneauId');
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        try {
+          final data = json.decode(response.body);
+          if (data['success'] == true) {
+            NotificationHelper.showSuccess(
+                context, "CRÉNEAU SUPPRIMÉ AVEC SUCCÈS");
+
+            await Future.delayed(const Duration(milliseconds: 100));
+            if (mounted) {
+              await _fetchCreneaux();
+            }
+          } else {
+            NotificationHelper.showError(context,
+                data['message'] ?? "ERREUR LORS DE LA SUPPRESSION DU CRÉNEAU");
+          }
+        } catch (e) {
+          NotificationHelper.showError(context, "ERREUR DE DÉCODAGE JSON: $e");
+        }
+      }
+      // SESSION EXPIREE
+      else if (response.statusCode == 403) {
+        NotificationHelper.showWarning(
+            context, 'SESSION EXPIRÉE. VEUILLEZ VOUS RECONNECTER.');
+        Navigator.pushReplacementNamed(context, '/login_screen');
+      }
       // AUTRES ERREURS
       else {
         NotificationHelper.showError(
