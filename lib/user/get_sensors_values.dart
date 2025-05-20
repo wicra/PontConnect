@@ -15,7 +15,7 @@ class GetSensorsValues extends StatefulWidget {
 
 class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   // VARIABLES D'ÉTAT
-  List<dynamic> _capteurs = [];
+  List<dynamic> _ponts = [];
   Timer? _refreshTimer;
   final Duration _refreshInterval = const Duration(seconds: 10);
   int _currentPage = 0;
@@ -25,14 +25,14 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   @override
   void initState() {
     super.initState();
-    _fetchCapteurs();
+    _fetchPonts();
     _refreshTimer = Timer.periodic(_refreshInterval, (timer) {
-      _fetchCapteurs(silent: true);
+      _fetchPonts(silent: true);
     });
   }
 
   // RÉCUPÉRATION DES DONNÉES CAPTEURS
-  Future<void> _fetchCapteurs({bool silent = false}) async {
+  Future<void> _fetchPonts({bool silent = false}) async {
     // RÉCUPÉRATION DU TOKEN
     final token = UserSession.userToken;
     if (token == null) {
@@ -42,7 +42,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
     try {
       // APPEL API
-      final url = Uri.parse('${ApiConstants.baseUrl}user/sensor-values');
+      final url = Uri.parse('${ApiConstants.baseUrl}sensor/mesures');
       final response = await http.get(
         url,
         headers: {
@@ -54,14 +54,14 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
       if (data['success'] == true) {
         setState(() {
-          _capteurs = data['ponts'];
+          _ponts = data['ponts'];
         });
 
         // VÉRIFICATION DES DONNÉES OBSOLÈTES (UNIQUEMENT UNE FOIS PAR SESSION)
         bool hasOutdatedData = false;
-        for (var pont in _capteurs) {
-          if (pont['DATE_AJOUT'] != null) {
-            DateTime sensorDate = DateTime.parse(pont['DATE_AJOUT']);
+        for (var pont in _ponts) {
+          if (pont['date_mesure'] != null) {
+            DateTime sensorDate = DateTime.parse(pont['date_mesure']);
             if (DateTime.now().difference(sensorDate).inHours >= 4) {
               hasOutdatedData = true;
               break;
@@ -105,9 +105,14 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
   // CONSTRUCTION D'UNE CARTE DE CAPTEUR MODERNE
   Widget _buildCapteurCard(Map<String, dynamic> pont) {
-    final String niveauEau = (pont['NIVEAU_EAU'] ?? "0").toString();
-    final String temperature = (pont['TEMPERATURE'] ?? "0").toString();
-    final String qualiteEau = (pont['HUMIDITE'] ?? "0").toString();
+    final String niveauEau = (pont['niveau_eau'] ?? "0").toString();
+    final String temperature = (pont['temperature'] ?? "0").toString();
+    final String qualiteEau = (pont['humidite'] ?? "0").toString();
+    
+    // Unités de mesure
+    final String uniteNiveau = (pont['unite_niveau'] ?? "cm").toString();
+    final String uniteTemperature = (pont['unite_temperature'] ?? "°C").toString();
+    final String uniteHumidite = (pont['unite_humidite'] ?? "ppm").toString();
 
     // DÉTERMINATION DE L'ÉTAT DES CAPTEURS
     final double niveauEauValue = double.tryParse(niveauEau) ?? 0;
@@ -168,7 +173,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                 _buildCompactSensorIndicator(
                   icon: Icons.thermostat,
                   title: "TEMPÉRATURE",
-                  value: "$temperature°C",
+                  value: "$temperature $uniteTemperature",
                   status: temperatureStatus,
                   statusColor: temperatureColor,
                 ),
@@ -177,7 +182,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                 _buildCompactSensorIndicator(
                   icon: Icons.water,
                   title: "NIVEAU D'EAU",
-                  value: "$niveauEau cm",
+                  value: "$niveauEau $uniteNiveau",
                   status: niveauEauStatus,
                   statusColor: niveauEauColor,
                 ),
@@ -186,7 +191,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                 _buildCompactSensorIndicator(
                   icon: Icons.opacity,
                   title: "PARTICULES",
-                  value: "$qualiteEau ppm",
+                  value: "$qualiteEau $uniteHumidite",
                   status: qualiteEauStatus,
                   statusColor: qualiteEauColor,
                 ),
@@ -194,7 +199,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
             ),
 
             // DERNIÈRE MISE À JOUR - UNIQUEMENT SI ESPACE DISPONIBLE
-            if (pont['DATE_AJOUT'] != null)
+            if (pont['date_mesure'] != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
@@ -203,7 +208,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                     Icon(Icons.update, size: 12, color: textSecondary),
                     const SizedBox(width: 2),
                     Text(
-                      _formatDate(pont['DATE_AJOUT']),
+                      _formatDate(pont['date_mesure']),
                       style: TextStyle(
                         fontSize: 10,
                         color: textSecondary,
@@ -282,7 +287,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
 
             // STATUT
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: statusColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -307,11 +312,11 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
-        _capteurs.length,
+        _ponts.length,
         (index) => Container(
           width: 6,
           height: 6,
-          margin: EdgeInsets.symmetric(horizontal: 3),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _currentPage == index
@@ -327,8 +332,8 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   @override
   Widget build(BuildContext context) {
     String currentPontName =
-        _capteurs.isNotEmpty && _currentPage < _capteurs.length
-            ? (_capteurs[_currentPage]['LIBELLE_PONT'] ?? "INCONNU")
+        _ponts.isNotEmpty && _currentPage < _ponts.length
+            ? (_ponts[_currentPage]['libelle_pont'] ?? "INCONNU")
                 .toString()
                 .toUpperCase()
             : "CAPTEURS ACTIFS";
@@ -348,13 +353,13 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: backgroundLight),
-            onPressed: () => _fetchCapteurs(),
+            onPressed: () => _fetchPonts(),
             tooltip: "ACTUALISER",
           ),
         ],
       ),
       backgroundColor: backgroundLight,
-      body: _capteurs.isEmpty
+      body: _ponts.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -377,7 +382,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
-                    itemCount: _capteurs.length,
+                    itemCount: _ponts.length,
                     onPageChanged: (index) {
                       setState(() {
                         _currentPage = index;
@@ -385,7 +390,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                     },
                     itemBuilder: (context, index) {
                       return Center(
-                        child: _buildCapteurCard(_capteurs[index]),
+                        child: _buildCapteurCard(_ponts[index]),
                       );
                     },
                   ),
@@ -400,7 +405,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                       Icon(Icons.swipe, color: textSecondary, size: 12),
                       const SizedBox(width: 4),
                       Text(
-                        "${_currentPage + 1}/${_capteurs.length}",
+                        "${_currentPage + 1}/${_ponts.length}",
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
