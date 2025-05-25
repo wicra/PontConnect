@@ -14,7 +14,6 @@ class GetSensorsValues extends StatefulWidget {
 }
 
 class _GetSensorsValuesPageState extends State<GetSensorsValues> {
-  // VARIABLES D'ÉTAT
   List<dynamic> _ponts = [];
   Timer? _refreshTimer;
   final Duration _refreshInterval = const Duration(seconds: 10);
@@ -22,6 +21,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   final PageController _pageController = PageController();
   bool _hasShownOutdatedWarning = false;
 
+  // INITIALISATION ET LANCEMENT DU REFRESH AUTO
   @override
   void initState() {
     super.initState();
@@ -31,9 +31,8 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     });
   }
 
-  // RÉCUPÉRATION DES DONNÉES CAPTEURS
+  // RÉCUPÉRATION DES VALEURS DES CAPTEURS
   Future<void> _fetchPonts({bool silent = false}) async {
-    // RÉCUPÉRATION DU TOKEN
     final token = UserSession.userToken;
     if (token == null) {
       NotificationHelper.showError(context, 'Token JWT non trouvé');
@@ -41,13 +40,12 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     }
 
     try {
-      // APPEL API
       final url = Uri.parse('${ApiConstants.baseUrl}sensor/mesures');
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 20));
       final data = json.decode(response.body);
@@ -57,7 +55,6 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
           _ponts = data['ponts'];
         });
 
-        // VÉRIFICATION DES DONNÉES OBSOLÈTES (UNIQUEMENT UNE FOIS PAR SESSION)
         bool hasOutdatedData = false;
         for (var pont in _ponts) {
           if (pont['date_mesure'] != null) {
@@ -74,10 +71,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
           NotificationHelper.showWarning(
               context, "DONNÉES NON À JOUR DEPUIS PLUS DE 4 HEURES");
         }
-      }
-
-      // SESSION EXPIREE
-      else if (response.statusCode == 403) {
+      } else if (response.statusCode == 403) {
         NotificationHelper.showWarning(
             context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
@@ -96,6 +90,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     }
   }
 
+  // NETTOYAGE DES RESSOURCES
   @override
   void dispose() {
     _refreshTimer?.cancel();
@@ -103,25 +98,26 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     super.dispose();
   }
 
-  // CONSTRUCTION D'UNE CARTE DE CAPTEUR MODERNE
+  // CONSTRUCTION DE LA CARTE CAPTEUR
   Widget _buildCapteurCard(Map<String, dynamic> pont) {
-    final String niveauEau = (pont['niveau_eau'] ?? "0").toString();
     final String temperature = (pont['temperature'] ?? "0").toString();
-    final String qualiteEau = (pont['humidite'] ?? "0").toString();
-    
-    // Unités de mesure
-    final String uniteNiveau = (pont['unite_niveau'] ?? "cm").toString();
-    final String uniteTemperature = (pont['unite_temperature'] ?? "°C").toString();
-    final String uniteHumidite = (pont['unite_humidite'] ?? "ppm").toString();
+    final String niveauEau = (pont['niveau_eau'] ?? "0").toString();
+    final String turbinite = (pont['turbinite'] ?? "0").toString();
+    final String humidite = (pont['humidite'] ?? "0").toString();
 
-    // DÉTERMINATION DE L'ÉTAT DES CAPTEURS
+    final String uniteTemperature =
+        (pont['unite_temperature'] ?? "°C").toString();
+    final String uniteNiveau = (pont['unite_niveau'] ?? "cm").toString();
+    final String uniteTurbinite = (pont['unite_turbinite'] ?? "ppm").toString();
+    final String uniteHumidite = (pont['unite_humidite'] ?? "%").toString();
+
     final double niveauEauValue = double.tryParse(niveauEau) ?? 0;
     final double temperatureValue = double.tryParse(temperature) ?? 20;
+    final double turbiniteValue = double.tryParse(turbinite) ?? 0;
+    final double humiditeValue = double.tryParse(humidite) ?? 0;
 
-    // ÉTAT NIVEAU D'EAU
     Color niveauEauColor = primaryColor;
     String niveauEauStatus = "NORMAL";
-
     if (niveauEauValue > 7) {
       niveauEauColor = accentColor;
       niveauEauStatus = "CRITIQUE";
@@ -130,10 +126,8 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
       niveauEauStatus = "ÉLEVÉ";
     }
 
-    // ÉTAT TEMPÉRATURE
     Color temperatureColor = primaryColor;
     String temperatureStatus = "NORMAL";
-
     if (temperatureValue < 0) {
       temperatureColor = secondaryColor;
       temperatureStatus = "GEL";
@@ -142,75 +136,164 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
       temperatureStatus = "ÉLEVÉE";
     }
 
-    // ÉTAT QUALITÉ D'EAU
-    final double qualiteEauValue = double.tryParse(qualiteEau) ?? 0;
-    Color qualiteEauColor = Colors.green;
-    String qualiteEauStatus = "BONNE";
+    Color turbiniteColor = Colors.green;
+    String turbiniteStatus = "BONNE";
+    if (turbiniteValue > 800) {
+      turbiniteColor = accentColor;
+      turbiniteStatus = "MAUVAISE";
+    } else if (turbiniteValue > 500) {
+      turbiniteColor = tertiaryColor;
+      turbiniteStatus = "MOYENNE";
+    }
 
-    if (qualiteEauValue > 800) {
-      qualiteEauColor = accentColor;
-      qualiteEauStatus = "MAUVAISE";
-    } else if (qualiteEauValue > 500) {
-      qualiteEauColor = tertiaryColor;
-      qualiteEauStatus = "MOYENNE";
+    Color humiditeColor = Colors.blueGrey;
+    String humiditeStatus = "OK";
+    if (humiditeValue > 80) {
+      humiditeColor = accentColor;
+      humiditeStatus = "HUMIDE";
+    } else if (humiditeValue < 30) {
+      humiditeColor = secondaryColor;
+      humiditeStatus = "SEC";
+    }
+
+    Widget capteurBloc({
+      required IconData icon,
+      required String title,
+      required String value,
+      required String unit,
+      required String status,
+      required Color statusColor,
+    }) {
+      return Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: statusColor.withOpacity(0.28), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 18, color: statusColor),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.20),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  "$value $unit",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // INDICATEURS DE CAPTEURS
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // TEMPÉRATURE
-                _buildCompactSensorIndicator(
+                capteurBloc(
                   icon: Icons.thermostat,
-                  title: "TEMPÉRATURE",
-                  value: "$temperature $uniteTemperature",
+                  title: "Température",
+                  value: temperature,
+                  unit: uniteTemperature,
                   status: temperatureStatus,
                   statusColor: temperatureColor,
                 ),
-
-                // NIVEAU D'EAU
-                _buildCompactSensorIndicator(
+                capteurBloc(
                   icon: Icons.water,
-                  title: "NIVEAU D'EAU",
-                  value: "$niveauEau $uniteNiveau",
+                  title: "Niveau d'eau",
+                  value: niveauEau,
+                  unit: uniteNiveau,
                   status: niveauEauStatus,
                   statusColor: niveauEauColor,
                 ),
-
-                // PARTICULES (QUALITÉ D'EAU)
-                _buildCompactSensorIndicator(
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                capteurBloc(
                   icon: Icons.opacity,
-                  title: "PARTICULES",
-                  value: "$qualiteEau $uniteHumidite",
-                  status: qualiteEauStatus,
-                  statusColor: qualiteEauColor,
+                  title: "Turbidité",
+                  value: turbinite,
+                  unit: uniteTurbinite,
+                  status: turbiniteStatus,
+                  statusColor: turbiniteColor,
+                ),
+                capteurBloc(
+                  icon: Icons.water_drop,
+                  title: "Humidité",
+                  value: humidite,
+                  unit: uniteHumidite,
+                  status: humiditeStatus,
+                  statusColor: humiditeColor,
                 ),
               ],
             ),
-
-            // DERNIÈRE MISE À JOUR - UNIQUEMENT SI ESPACE DISPONIBLE
             if (pont['date_mesure'] != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.update, size: 12, color: textSecondary),
+                    Icon(Icons.update, size: 11, color: textSecondary),
                     const SizedBox(width: 2),
                     Text(
                       _formatDate(pont['date_mesure']),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9,
                         color: textSecondary,
                       ),
                     ),
@@ -223,7 +306,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     );
   }
 
-  // FORMATAGE DE LA DATE DE MISE À JOUR
+  // FORMATAGE DE LA DATE
   String _formatDate(String dateStr) {
     try {
       final DateTime date = DateTime.parse(dateStr);
@@ -233,81 +316,7 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
     }
   }
 
-  // INDICATEUR DE CAPTEUR COMPACT
-  Widget _buildCompactSensorIndicator({
-    required IconData icon,
-    required String title,
-    required String value,
-    required String status,
-    required Color statusColor,
-  }) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ICÔNE
-            Icon(icon, size: 18, color: statusColor),
-
-            const SizedBox(height: 4),
-
-            // TITRE
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: textSecondary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 5),
-
-            // VALEUR
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: textPrimary,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            // STATUT
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // INDICATEURS DE PAGES
+  // INDICATEUR DE PAGE
   Widget _buildPageIndicator() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -331,12 +340,11 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
   // CONSTRUCTION DE L'INTERFACE
   @override
   Widget build(BuildContext context) {
-    String currentPontName =
-        _ponts.isNotEmpty && _currentPage < _ponts.length
-            ? (_ponts[_currentPage]['libelle_pont'] ?? "INCONNU")
-                .toString()
-                .toUpperCase()
-            : "CAPTEURS ACTIFS";
+    String currentPontName = _ponts.isNotEmpty && _currentPage < _ponts.length
+        ? (_ponts[_currentPage]['libelle_pont'] ?? "INCONNU")
+            .toString()
+            .toUpperCase()
+        : "CAPTEURS ACTIFS";
 
     return Scaffold(
       appBar: AppBar(
@@ -378,7 +386,6 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
             )
           : Column(
               children: [
-                // CAROUSEL DE CAPTEURS
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
@@ -395,8 +402,6 @@ class _GetSensorsValuesPageState extends State<GetSensorsValues> {
                     },
                   ),
                 ),
-
-                // INDICATEURS DE PAGE ET INSTRUCTION DE GLISSEMENT COMBINÉS
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
                   child: Row(
