@@ -432,7 +432,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
                     },
                     isLoading: _isLoadingBateaux,
                     hint: _bateaux.isEmpty && !_isLoadingBateaux
-                        ? const Text("AUCUN BATEAU DISPONIBLE",
+                        ? const Text("0 BATEAU",
                             style: TextStyle(fontFamily: 'DarumadropOne'))
                         : null,
                   ),
