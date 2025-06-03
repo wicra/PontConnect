@@ -144,6 +144,17 @@ class _UserPageState extends State<UserPage> {
 
     // DEUXIEME ONGLET
     else if (_currentIndex == 1) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          color: backgroundLight,
+          child: ViewUserBateaux(),
+        ),
+      );
+    }
+
+    // TROISIEME ONGLET
+      else if (_currentIndex == 2) {
       return Column(
         children: [
           // SECTION HAUTE
@@ -151,7 +162,7 @@ class _UserPageState extends State<UserPage> {
             borderRadius: BorderRadius.circular(16),
             child: Container(
               color: backgroundLight,
-              height: 260,
+              height: 265,
               child: UserAddReservation(),
             ),
           ),
@@ -168,17 +179,6 @@ class _UserPageState extends State<UserPage> {
             ),
           ),
         ],
-      );
-    }
-
-    // TROISIEME ONGLET
-    else if (_currentIndex == 2) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          color: backgroundLight,
-          child: ViewUserBateaux(),
-        ),
       );
     }
 
@@ -238,12 +238,12 @@ class _UserPageState extends State<UserPage> {
           label: 'Accueil',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Réservation',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.directions_boat),
           label: 'Bat',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Réservation',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.help_outline_sharp),

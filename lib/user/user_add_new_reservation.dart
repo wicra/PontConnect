@@ -378,28 +378,8 @@ class _UserAddReservationState extends State<UserAddReservation> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // SÉLECTION DU BATEAU
-            _buildDropdownField<int>(
-              label: "BATEAU",
-              items: _bateaux.map((b) {
-                return DropdownMenuItem<int>(
-                  value: b['bateau_id'],
-                  child: Text(b['nom'] ?? '',
-                      style: const TextStyle(fontFamily: 'DarumadropOne')),
-                );
-              }).toList(),
-              value: _selectedBateauId,
-              onChanged: (val) {
-                setState(() {
-                  _selectedBateauId = val;
-                });
-              },
-              isLoading: _isLoadingBateaux,
-              hint: _bateaux.isEmpty && !_isLoadingBateaux
-                  ? const Text("AUCUN BATEAU DISPONIBLE",
-                      style: TextStyle(fontFamily: 'DarumadropOne'))
-                  : null,
-            ),
+            // SÉLECTION DE LA DATE
+            _buildDatePicker(),
             const SizedBox(height: 16),
 
             // SÉLECTION DU CRÉNEAU
@@ -428,18 +408,36 @@ class _UserAddReservationState extends State<UserAddReservation> {
             ),
             const SizedBox(height: 16),
 
-            // DATE ET BOUTON
+            // SÉLECTION DU BATEAU ET BOUTON RÉSERVER
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // SÉLECTION DE LA DATE
                 Expanded(
                   flex: 6,
-                  child: _buildDatePicker(),
+                  child: _buildDropdownField<int>(
+                    label: "BATEAU",
+                    items: _bateaux.map((b) {
+                      return DropdownMenuItem<int>(
+                        value: b['bateau_id'],
+                        child: Text(b['nom'] ?? '',
+                            style:
+                                const TextStyle(fontFamily: 'DarumadropOne')),
+                      );
+                    }).toList(),
+                    value: _selectedBateauId,
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedBateauId = val;
+                      });
+                    },
+                    isLoading: _isLoadingBateaux,
+                    hint: _bateaux.isEmpty && !_isLoadingBateaux
+                        ? const Text("AUCUN BATEAU DISPONIBLE",
+                            style: TextStyle(fontFamily: 'DarumadropOne'))
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
-
-                // BOUTON DE RÉSERVATION
                 Expanded(
                   flex: 4,
                   child: SizedBox(
