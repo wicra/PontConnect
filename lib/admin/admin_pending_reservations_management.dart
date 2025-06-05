@@ -17,11 +17,51 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
   bool _isLoading = false;
   List<dynamic> _reservations = [];
   String _errorMessage = "";
+  List<dynamic> _ponts = [];
+  int? _selectedPontId;
 
   @override
   void initState() {
     super.initState();
-    _fetchReservations();
+    _fetchPonts();
+  }
+
+  // RÉCUPÉRATION DES PONTS
+  Future<void> _fetchPonts() async {
+    final token = UserSession.userToken;
+    if (token == null) return;
+    setState(() {
+      _isLoading = true;
+    });
+    final url = Uri.parse("${ApiConstants.baseUrl}sensor/mesures");
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        setState(() {
+          _ponts = data['ponts'] ?? [];
+          _selectedPontId = _ponts.isNotEmpty ? _ponts[0]['pont_id'] : null;
+        });
+        _fetchReservations();
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage =
+              data['message'] ?? "Erreur lors du chargement des ponts";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "Erreur: $e";
+      });
+    }
   }
 
   // RÉCUPÉRATION DES RÉSERVATIONS
@@ -31,13 +71,20 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
       NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
-
+    if (_selectedPontId == null) {
+      setState(() {
+        _reservations = [];
+        _isLoading = false;
+        _errorMessage = "Aucun pont sélectionné";
+      });
+      return;
+    }
     setState(() {
       _isLoading = true;
       _errorMessage = "";
     });
-
-    final url = Uri.parse("${ApiConstants.baseUrl}admin/reservations/pending");
+    final url = Uri.parse(
+        "${ApiConstants.baseUrl}admin/reservations/pending?pont_id=$_selectedPontId");
     try {
       final response = await http.get(
         url,
@@ -46,11 +93,12 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
           'Authorization': 'Bearer $token',
         },
       );
-
-      // VÉRIFIER SI LA RÉPONSE EST DU JSON VALIDE
+      // Vérification de la validité de la réponse
       if (response.statusCode != 200 || response.body.contains("<!DOCTYPE")) {
         setState(() {
-          _errorMessage = "Erreur serveur: Réponse non valide";
+          _errorMessage = "Erreur serveur: Réponse non valide (code: " +
+              response.statusCode.toString() +
+              ")";
           _isLoading = false;
         });
         return;
@@ -99,8 +147,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
       _isLoading = true;
     });
 
-    final url =
-        Uri.parse("${ApiConstants.baseUrl}user/reservations-status");
+    final url = Uri.parse("${ApiConstants.baseUrl}user/reservations-status");
     final body = json.encode({
       "reservation_id": reservationId,
       "new_status": newStatus,
@@ -212,7 +259,7 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
     final String libelle = reservation['libelle'] ?? "";
     final String heureDebut = (reservation['heure_debut'] ?? "").toString();
     final String heureFin = (reservation['heure_fin'] ?? "").toString();
-    final String userName = reservation['user_name'] ?? "UTILISATEUR INCONNU";
+    final String userName = reservation['user_nom'] ?? "UTILISATEUR INCONNU";
     final String reservationDate = reservation['reservation_date'] ?? "";
     final String currentStatus = reservation['statut'] ?? "en attente";
     final int confirmedCount =
@@ -659,133 +706,170 @@ class _AdminPendingReservationsState extends State<AdminPendingReservations> {
 
       // CONTENU PRINCIPAL
       backgroundColor: backgroundLight,
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(color: secondaryColor),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "CHARGEMENT...",
-                    style: TextStyle(
-                      color: textSecondary,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'DarumadropOne',
-                    ),
-                  ),
-                ],
+      body: Column(
+        children: [
+          if (_ponts.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: DropdownButtonFormField<int>(
+                value: _selectedPontId,
+                decoration: InputDecoration(
+                  labelText: "PONT",
+                  labelStyle: TextStyle(fontSize: 15, color: textSecondary),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                items: _ponts.map<DropdownMenuItem<int>>((p) {
+                  return DropdownMenuItem<int>(
+                    value: p['pont_id'],
+                    child: Text(p['libelle_pont'] ?? '',
+                        style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedPontId = val;
+                  });
+                  _fetchReservations();
+                },
               ),
-            )
-          : _errorMessage.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: accentColor,
-                        size: 60,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "ERREUR",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: accentColor,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'DarumadropOne',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          _errorMessage,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: textPrimary,
-                            fontFamily: 'DarumadropOne',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _fetchReservations,
-                        icon: const Icon(Icons.refresh, color: backgroundLight),
-                        label: const Text(
-                          "RÉESSAYER",
+            ),
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(color: secondaryColor),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "CHARGEMENT...",
                           style: TextStyle(
-                            color: backgroundLight,
+                            color: textSecondary,
+                            fontWeight: FontWeight.bold,
                             fontFamily: 'DarumadropOne',
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : _reservations.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            color: textSecondary.withOpacity(0.5),
-                            size: 60,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "AUCUNE RÉSERVATION EN ATTENTE",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: textPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'DarumadropOne',
+                      ],
+                    ),
+                  )
+                : _errorMessage.isNotEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: accentColor,
+                              size: 60,
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _fetchReservations,
-                            icon: const Icon(Icons.refresh,
-                                color: backgroundLight),
-                            label: const Text(
-                              "ACTUALISER",
+                            const SizedBox(height: 16),
+                            const Text(
+                              "ERREUR",
                               style: TextStyle(
-                                color: backgroundLight,
+                                fontSize: 18,
+                                color: accentColor,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'DarumadropOne',
                               ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
+                              child: Text(
+                                _errorMessage,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: textPrimary,
+                                  fontFamily: 'DarumadropOne',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: _fetchReservations,
+                              icon: const Icon(Icons.refresh,
+                                  color: backgroundLight),
+                              label: const Text(
+                                "RÉESSAYER",
+                                style: TextStyle(
+                                  color: backgroundLight,
+                                  fontFamily: 'DarumadropOne',
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _reservations.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  color: textSecondary.withOpacity(0.5),
+                                  size: 60,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  "AUCUNE RÉSERVATION EN ATTENTE",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'DarumadropOne',
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: _fetchReservations,
+                                  icon: const Icon(Icons.refresh,
+                                      color: backgroundLight),
+                                  label: const Text(
+                                    "ACTUALISER",
+                                    style: TextStyle(
+                                      color: backgroundLight,
+                                      fontFamily: 'DarumadropOne',
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _fetchReservations,
+                            color: primaryColor,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              itemCount: _reservations.length,
+                              itemBuilder: (context, index) {
+                                return _buildReservationCard(
+                                    _reservations[index]);
+                              },
                             ),
                           ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _fetchReservations,
-                      color: primaryColor,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        itemCount: _reservations.length,
-                        itemBuilder: (context, index) {
-                          return _buildReservationCard(_reservations[index]);
-                        },
-                      ),
-                    ),
+          ),
+        ],
+      ),
     );
   }
 }

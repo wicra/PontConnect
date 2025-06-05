@@ -16,16 +16,50 @@ class _UserAddReservationState extends State<UserAddReservation> {
   // VARIABLES D'ÉTAT
   List<dynamic> _creneaux = [];
   List<dynamic> _bateaux = [];
+  List<dynamic> _ponts = [];
   int? _selectedCreneauId;
   int? _selectedBateauId;
+  int? _selectedPontId;
   DateTime? _selectedDate;
   bool _isLoadingBateaux = false;
   bool _isLoadingCreneaux = false;
+  bool _isLoadingPonts = false;
 
   @override
   void initState() {
     super.initState();
+    _fetchPonts();
     _fetchBateaux();
+  }
+
+  // RÉCUPÉRATION DES PONTS
+  Future<void> _fetchPonts() async {
+    final token = UserSession.userToken;
+    if (token == null) return;
+    setState(() {
+      _isLoadingPonts = true;
+    });
+    final url = Uri.parse("${ApiConstants.baseUrl}sensor/mesures");
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = json.decode(response.body);
+      setState(() {
+        _ponts = data['ponts'] ?? [];
+        _selectedPontId = _ponts.isNotEmpty ? _ponts[0]['pont_id'] : null;
+        _isLoadingPonts = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingPonts = false;
+      });
+      NotificationHelper.showError(context, "ERREUR: $e");
+    }
   }
 
   // RÉCUPÉRATION DES CRÉNEAUX DISPONIBLES
@@ -37,14 +71,15 @@ class _UserAddReservationState extends State<UserAddReservation> {
       return;
     }
 
-    if (_selectedDate == null) return;
+    if (_selectedDate == null || _selectedPontId == null) return;
 
     setState(() {
       _isLoadingCreneaux = true;
     });
 
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-    final url = Uri.parse("${ApiConstants.baseUrl}user/creneaux?date=$dateStr");
+    final url = Uri.parse(
+        "${ApiConstants.baseUrl}user/creneaux?date=$dateStr&pont_id=$_selectedPontId");
     try {
       final response = await http.get(
         url,
@@ -155,7 +190,8 @@ class _UserAddReservationState extends State<UserAddReservation> {
 
     if (_selectedCreneauId == null ||
         _selectedDate == null ||
-        _selectedBateauId == null) {
+        _selectedBateauId == null ||
+        _selectedPontId == null) {
       NotificationHelper.showWarning(
           context, "VEUILLEZ REMPLIR TOUS LES CHAMPS");
       return;
@@ -188,6 +224,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
       "creneau_id": _selectedCreneauId,
       "bateau_id": _selectedBateauId,
       "reservation_date": _selectedDate!.toIso8601String().substring(0, 10),
+      "pont_id": _selectedPontId,
     });
 
     try {
@@ -342,7 +379,7 @@ class _UserAddReservationState extends State<UserAddReservation> {
           children: [
             Text(
               _selectedDate == null
-                  ? "CHOISIR LA DATE"
+                  ? "DATE"
                   : DateFormat('yyyy-MM-dd').format(_selectedDate!),
               style: const TextStyle(
                   fontSize: 15,
@@ -378,8 +415,44 @@ class _UserAddReservationState extends State<UserAddReservation> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // SÉLECTION DE LA DATE
-            _buildDatePicker(),
+            // SÉLECTION DU PONT ET DE LA DATE (CÔTE À CÔTE)
+            Row(
+              children: [
+                Expanded(
+                  flex: 7,
+                  child: _buildDropdownField<int>(
+                    label: "PONT",
+                    items: _ponts.map((p) {
+                      return DropdownMenuItem<int>(
+                        value: p['pont_id'],
+                        child: Text(
+                          p['libelle_pont'] ?? '',
+                          style: const TextStyle(fontFamily: 'DarumadropOne'),
+                        ),
+                      );
+                    }).toList(),
+                    value: _selectedPontId,
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedPontId = val;
+                        _selectedCreneauId = null;
+                      });
+                      _fetchCreneaux();
+                    },
+                    isLoading: _isLoadingPonts,
+                    hint: _ponts.isEmpty && !_isLoadingPonts
+                        ? const Text("0 PONT",
+                            style: TextStyle(fontFamily: 'DarumadropOne'))
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 5,
+                  child: _buildDatePicker(),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
             // SÉLECTION DU CRÉNEAU

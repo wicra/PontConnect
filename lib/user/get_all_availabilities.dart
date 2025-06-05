@@ -12,52 +12,77 @@ class GetAllAvailabilities extends StatefulWidget {
 }
 
 class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
-  // VARIABLES D'ÉTAT
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   List<dynamic> _creneaux = [];
+  List<dynamic> _ponts = [];
+  dynamic _selectedPont;
 
   @override
   void initState() {
     super.initState();
-    _fetchDisponibilites();
+    _fetchPonts();
+  }
+
+  // RÉCUPÉRATION DES PONTS
+  Future<void> _fetchPonts() async {
+    final token = UserSession.userToken;
+    if (token == null) return;
+    final url = Uri.parse("${ApiConstants.baseUrl}sensor/mesures");
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = json.decode(response.body);
+      if (data['success'] == true && data['ponts'] != null) {
+        setState(() {
+          _ponts = data['ponts'];
+          _selectedPont = _ponts.isNotEmpty ? _ponts[0] : null;
+        });
+        _fetchDisponibilites();
+      }
+    } catch (_) {}
   }
 
   // RÉCUPÉRATION DES DISPONIBILITÉS
   Future<void> _fetchDisponibilites() async {
-    // RÉCUPÉRATION DU TOKEN
     final token = UserSession.userToken;
     if (token == null) {
       NotificationHelper.showError(context, 'Token JWT non trouvé');
       return;
     }
-
+    if (_selectedPont == null || _selectedPont['pont_id'] == null) {
+      NotificationHelper.showError(context, 'Veuillez sélectionner un pont');
+      return;
+    }
     setState(() {
       _isLoading = true;
       _creneaux = [];
     });
     String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final url =
-        Uri.parse("${ApiConstants.baseUrl}user/availabilities?date=$dateStr");
+    String pontId = _selectedPont['pont_id'].toString();
+    final url = Uri.parse(
+      "${ApiConstants.baseUrl}user/availabilities?date=$dateStr&pont_id=$pontId",
+    );
 
     try {
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // TOKEN JWT
+          'Authorization': 'Bearer $token',
         },
       );
-
       final data = json.decode(response.body);
       if (data["success"] == true) {
         setState(() {
           _creneaux = data["creneaux"];
         });
-      }
-
-      // SESSION EXPIREE
-      else if (response.statusCode == 403) {
+      } else if (response.statusCode == 403) {
         NotificationHelper.showWarning(
             context, 'Session expirée. Veuillez vous reconnecter.');
         Navigator.pushReplacementNamed(context, '/login_screen');
@@ -73,7 +98,6 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
     });
   }
 
-  // SÉLECTION DE DATE
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -131,8 +155,7 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () {
-        },
+        onTap: () {},
         child: Container(
           decoration: BoxDecoration(
             border: Border(
@@ -351,12 +374,30 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: primaryColor,
-        title: const Text(
-          'DISPONIBILITÉS',
-          style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 22,
-              color: backgroundLight),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'DISPONIBILITÉS',
+              style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                  color: backgroundLight),
+            ),
+            if (_selectedPont != null && _selectedPont['libelle_pont'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  _selectedPont['libelle_pont'].toString().toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: backgroundLight.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
       backgroundColor: backgroundLight,
@@ -364,10 +405,43 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            // SÉLECTION DE LA DATE
+            // SÉLECTION DU PONT ET DE LA DATE
             Row(
               children: [
+                if (_ponts.isNotEmpty)
+                  Expanded(
+                    flex: 8,
+                    child: DropdownButtonFormField<dynamic>(
+                      value: _selectedPont,
+                      decoration: InputDecoration(
+                        labelText: "PONT",
+                        labelStyle:
+                            TextStyle(fontSize: 15, color: textSecondary),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: _ponts.map<DropdownMenuItem<dynamic>>((p) {
+                        return DropdownMenuItem<dynamic>(
+                          value: p,
+                          child: Text(
+                            p['libelle_pont'].toString(),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedPont = val;
+                        });
+                        _fetchDisponibilites();
+                      },
+                    ),
+                  ),
+                const SizedBox(width: 8),
                 Expanded(
+                  flex: 5,
                   child: GestureDetector(
                     onTap: _selectDate,
                     child: InputDecorator(
@@ -390,7 +464,6 @@ class _GetAllAvailabilitiesState extends State<GetAllAvailabilities> {
               ],
             ),
             const SizedBox(height: 16),
-
             // AFFICHAGE DES CRÉNEAUX
             Expanded(
               child: _isLoading
