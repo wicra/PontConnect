@@ -246,7 +246,7 @@ class HelpPage extends StatelessWidget {
             // SECTION : VERSION
             Center(
               child: Text(
-                'Version de l\'application : 1.2.1',
+                'Version de l\'application : 1.2.2',
                 style: const TextStyle(
                   fontSize: 16,
                   fontStyle: FontStyle.italic,
