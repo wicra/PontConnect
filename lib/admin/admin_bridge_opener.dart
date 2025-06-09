@@ -143,7 +143,7 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
       decoration: InputDecoration(
         filled: true,
         fillColor: backgroundLight,
-        labelText: "Choisir un pont",
+        labelText: "Sélectionnez un pont",
         labelStyle: const TextStyle(
           fontFamily: 'DarumadropOne',
           color: textSecondary,
@@ -179,40 +179,47 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
   }
 
   // UI : STATUT ACTUEL
-  Widget _buildStatus(
-      Color statusColor, IconData statusIcon, String statusLabel) {
+  Widget _buildStatus(Color statusColor, IconData statusIcon,
+      String statusLabel, String pontName) {
     return Column(
       children: [
         Text(
-          "STATUT ACTUEL",
+          pontName,
           style: TextStyle(
             fontFamily: 'DarumadropOne',
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-            color: textSecondary,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: textPrimary,
             letterSpacing: 1.2,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
           decoration: BoxDecoration(
             color: statusColor.withOpacity(0.13),
             borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: statusColor.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(statusIcon, color: statusColor, size: 28),
-              const SizedBox(width: 12),
+              Icon(statusIcon, color: statusColor, size: 30),
+              const SizedBox(width: 14),
               Text(
                 statusLabel,
                 style: TextStyle(
                   color: statusColor,
                   fontFamily: 'DarumadropOne',
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 22,
                   letterSpacing: 2,
                 ),
               ),
@@ -235,13 +242,13 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
       child: Material(
         color: color,
         shape: const CircleBorder(),
-        elevation: 4,
+        elevation: 6,
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: _loading ? null : onTap,
           child: SizedBox(
-            width: 62,
-            height: 62,
+            width: 68,
+            height: 68,
             child: Center(
               child: _loading
                   ? const SizedBox(
@@ -252,7 +259,7 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
                         strokeWidth: 3,
                       ),
                     )
-                  : Icon(icon, color: backgroundLight, size: 30),
+                  : Icon(icon, color: backgroundLight, size: 32),
             ),
           ),
         ),
@@ -272,9 +279,11 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
 
     Color statusColor = textSecondary;
     IconData statusIcon = Icons.help_outline_rounded;
-    String statusLabel = "Sélectionnez un pont";
+    String statusLabel = "";
+    String pontName = "";
     if (pont != null) {
       final status = (pont['STATUS_PONT'] ?? '').toString().toLowerCase();
+      pontName = pont['LIBELLE_PONT'] ?? '';
       switch (status) {
         case 'ouvert':
           statusColor = primaryColor;
@@ -299,7 +308,7 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
     }
 
     return Scaffold(
-      backgroundColor: backgroundCream,
+      backgroundColor: backgroundLight,
       appBar: AppBar(
         backgroundColor: primaryColor,
         title: const Text(
@@ -318,27 +327,73 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
       body: _fetching
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Container(
+              child: SingleChildScrollView(
+                child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-                  decoration: BoxDecoration(
-                    color: backgroundLight,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildStatus(statusColor, statusIcon, statusLabel),
-                      const SizedBox(height: 24),
-                      _buildDropdown(),
-                      const SizedBox(height: 32),
-                      if (_selectedPontId != null)
-                        Column(
+                      // UI ACCUEIL MODERNE SI PAS DE PONT SÉLECTIONNÉ
+                      if (_selectedPontId == null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 36),
+                          decoration: BoxDecoration(
+                            color: backgroundLight,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.07),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.brightness_1,
+                                  color: primaryColor, size: 54),
+                              const SizedBox(height: 18),
+                              Text(
+                                "AUCUN PONT SÉLECTIONNÉ",
+                                style: TextStyle(
+                                  fontFamily: 'DarumadropOne',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: textSecondary,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                "Veuillez choisir un pont à contrôler",
+                                style: TextStyle(
+                                  fontFamily: 'DarumadropOne',
+                                  color: textSecondary.withOpacity(0.7),
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _buildDropdown(),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        // STATUT ET NOM DU PONT
+                        _buildStatus(
+                            statusColor, statusIcon, statusLabel, pontName),
+                        const SizedBox(height: 28),
+                        // MENU DÉROULANT
+                        _buildDropdown(),
+                        const SizedBox(height: 32),
+                        // BOUTONS DE COMMANDE
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            Column(
                               children: [
                                 _buildCircleActionButton(
                                   icon: Icons.lock_open_rounded,
@@ -346,39 +401,42 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
                                   onTap: () => _updatePontStatus("ouvert"),
                                   tooltip: "Ouvrir",
                                 ),
-                                const SizedBox(width: 32),
+                                const SizedBox(height: 8),
+                                const Text("Ouvrir",
+                                    style: TextStyle(
+                                        fontFamily: 'DarumadropOne',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15)),
+                              ],
+                            ),
+                            const SizedBox(width: 36),
+                            Column(
+                              children: [
                                 _buildCircleActionButton(
                                   icon: Icons.lock_outline_rounded,
                                   color: accentColor,
                                   onTap: () => _updatePontStatus("ferme"),
                                   tooltip: "Fermer",
                                 ),
-                                const SizedBox(width: 32),
+                                const SizedBox(height: 8),
+                                const Text("Fermer",
+                                    style: TextStyle(
+                                        fontFamily: 'DarumadropOne',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15)),
+                              ],
+                            ),
+                            const SizedBox(width: 36),
+                            Column(
+                              children: [
                                 _buildCircleActionButton(
                                   icon: Icons.timelapse_rounded,
                                   color: tertiaryColor,
                                   onTap: () => _updatePontStatus("stop"),
                                   tooltip: "Stop",
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text("Ouvrir",
-                                    style: TextStyle(
-                                        fontFamily: 'DarumadropOne',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15)),
-                                SizedBox(width: 44),
-                                Text("Fermer",
-                                    style: TextStyle(
-                                        fontFamily: 'DarumadropOne',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15)),
-                                SizedBox(width: 36),
-                                Text("Stop",
+                                const SizedBox(height: 8),
+                                const Text("Stop",
                                     style: TextStyle(
                                         fontFamily: 'DarumadropOne',
                                         fontWeight: FontWeight.w600,
@@ -387,32 +445,34 @@ class _AdminBridgeOpenerState extends State<AdminBridgeOpener> {
                             ),
                           ],
                         ),
-                      if (_statusMessage != null) ...[
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _statusMessage!.contains("succès") ||
-                                    _statusMessage!.contains("mis à jour")
-                                ? primaryColor.withOpacity(0.12)
-                                : accentColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Text(
-                            _statusMessage!,
-                            style: TextStyle(
+                        // MESSAGE DE STATUT
+                        if (_statusMessage != null) ...[
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 12),
+                            decoration: BoxDecoration(
                               color: _statusMessage!.contains("succès") ||
                                       _statusMessage!.contains("mis à jour")
-                                  ? primaryColor
-                                  : accentColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              fontFamily: 'DarumadropOne',
+                                  ? primaryColor.withOpacity(0.12)
+                                  : accentColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            textAlign: TextAlign.center,
+                            child: Text(
+                              _statusMessage!,
+                              style: TextStyle(
+                                color: _statusMessage!.contains("succès") ||
+                                        _statusMessage!.contains("mis à jour")
+                                    ? primaryColor
+                                    : accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                fontFamily: 'DarumadropOne',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                        ),
+                        ]
                       ]
                     ],
                   ),
