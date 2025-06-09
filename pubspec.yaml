@@ -6,7 +6,7 @@ description: "Application mobile - Projet de 2ème année."
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # VERSION DE L'APPLICATION
-version: 1.2.2
+version: 1.2.3
 
 # VERSION DU SDK FLUTTER
 environment:
