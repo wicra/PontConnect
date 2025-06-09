@@ -6,6 +6,8 @@ import 'package:pontconnect/user/get_all_availabilities.dart';
 import 'package:pontconnect/admin/admin_pending_reservations_management.dart';
 import 'package:pontconnect/admin/admin_schedules_management.dart';
 import 'package:pontconnect/core/constants.dart';
+import 'package:pontconnect/admin/admin_bridge_opener.dart';
+
 
 // PAGE PRINCIPALE DE L'ADMINISTRATEUR
 class AdminPage extends StatefulWidget {
@@ -145,6 +147,18 @@ class _AdminPageState extends State<AdminPage> {
         ),
       );
     }
+
+    // PAGE OUVERTURE DE PONT
+    else if (_currentIndex == 2) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          color: backgroundLight,
+          child: AdminBridgeOpener(),
+        ),
+      );
+    }
+
     // PAGE GESTION DES PONTS
     else if (_currentIndex == 3) {
       return ClipRRect(
@@ -201,8 +215,8 @@ class _AdminPageState extends State<AdminPage> {
           label: 'CONFIRM',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.camera_enhance_outlined),
-          label: 'CAM',
+          icon: Icon(Icons.keyboard_command_key),
+          label: 'COMMANDE',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.calendar_month_outlined),
